@@ -589,7 +589,7 @@ type AdminOrder = {
   total: number;
   unpriced: number;
   createdAt: number;
-  smsStatus: "sent" | "failed" | "not_configured" | "pending";
+  smsStatus: "sent" | "failed" | "not_configured" | "pending" | "cancelled";
 };
 type OrdersData = { orders: AdminOrder[]; sms: { provider: "solapi" | "twilio" | null; to: string } };
 
@@ -617,7 +617,15 @@ function OrdersPanel({ t, lang, live, now }: { t: UI; lang: Locale; live: boolea
   }, [live]);
 
   const status = (s: AdminOrder["smsStatus"]) =>
-    s === "sent" ? t.admin.orders.sent : s === "failed" ? t.admin.orders.failed : s === "pending" ? t.admin.orders.pending : t.admin.orders.notConfigured;
+    s === "cancelled"
+      ? t.admin.orders.cancelled
+      : s === "sent"
+        ? t.admin.orders.sent
+        : s === "failed"
+          ? t.admin.orders.failed
+          : s === "pending"
+            ? t.admin.orders.pending
+            : t.admin.orders.notConfigured;
 
   return (
     <section className={`${styles.card} ${styles.wide}`} aria-labelledby="admin-orders">
@@ -638,7 +646,7 @@ function OrdersPanel({ t, lang, live, now }: { t: UI; lang: Locale; live: boolea
       ) : (
         <ul className={styles.orderList}>
           {data.orders.map((o) => (
-            <li key={o.id} className={styles.orderRow}>
+            <li key={o.id} className={styles.orderRow} data-status={o.smsStatus}>
               <div className={styles.orderTop}>
                 <span className={styles.orderId}>#{o.id}</span>
                 <span className={styles.threadName}>{t.admin.orders.table(o.table)}</span>

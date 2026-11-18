@@ -14,7 +14,7 @@ function HeaderLanguage() {
 
 export function HalalSeal({ size = "lg" }: { size?: "lg" | "sm" }) {
   return (
-    <div className={`${styles.seal} ${size === "sm" ? styles.sealSm : ""}`} role="img" aria-label="100% Halal">
+    <div className={`${styles.seal} ${size === "sm" ? styles.sealSm : styles.sealLg}`} role="img" aria-label="100% Halal">
       <span className={styles.sealPct} aria-hidden="true">
         100%
       </span>

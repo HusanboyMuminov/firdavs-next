@@ -83,7 +83,8 @@ export type Photo = { src: StaticImageData; credit?: PhotoCredit };
  * The current images are openly licensed photos from Wikimedia Commons and
  * Flickr — not photos of this restaurant's own dishes (some show a close
  * relative of the dish, e.g. tortellini in broth for chuchvara) — cropped and
- * resized; their credits are shown on the Info screen, as the licenses require.
+ * resized. Their credits are kept here as the licence record (no longer shown
+ * in the app); CC BY / CC BY-SA photos are meant to be credited where they are used.
  */
 export const photos = {
   achchiqChuchuk: {
@@ -238,17 +239,19 @@ export const photos = {
     src: napoleon,
     credit: { author: "Bin im Garten", license: "CC BY-SA 3.0", source: "https://commons.wikimedia.org/wiki/File:Mille-feuille_009.JPG" },
   },
+  // A whole non photographed from above, digitally cut in half (no open photo of a half non exists).
   nonYarimta: {
     src: nonYarimta,
-    credit: { author: "Shuhrataxmedov", license: "CC BY-SA 3.0", source: "https://commons.wikimedia.org/wiki/File:Piece_of_%27Patir-non%27.jpg" },
+    credit: { author: "Abdullaev", license: "Public domain", source: "https://commons.wikimedia.org/wiki/File:Uyghur_chon_nan.JPG" },
   },
   oliviya: {
     src: oliviya,
     credit: { author: "Carlosdisogra", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Ensalada_rusa_argentina.JPG" },
   },
+  // Buxoro patiri (thin, layered, oily), colour-corrected from a blue studio backdrop.
   patir: {
     src: patir,
-    credit: { author: "Shuhrataxmedov", license: "CC BY-SA 3.0", source: "https://commons.wikimedia.org/wiki/File:%D0%9F%D0%B0%D1%82%D0%B8%D1%80-%D0%BD%D0%BE%D0%BD-01.jpg" },
+    credit: { author: "AIDEPCUL", license: "CC BY 4.0", source: "https://commons.wikimedia.org/wiki/File:Buxoro_patiri.png" },
   },
   paxlava: {
     src: paxlava,

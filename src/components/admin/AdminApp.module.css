@@ -775,6 +775,18 @@
   background: #fdecec;
 }
 
+.smsChip[data-status="cancelled"] {
+  color: var(--ink-2);
+  background: var(--line);
+}
+
+/* Cancelled by the guest: kept for the record, struck through. */
+.orderRow[data-status="cancelled"] .orderLines,
+.orderRow[data-status="cancelled"] .orderTotal {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+
 .orderLines {
   display: flex;
   flex-direction: column;

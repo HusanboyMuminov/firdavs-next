@@ -5,7 +5,7 @@ import { deliver, pushReady, removeAdminSubscription, removeSubscription, type P
 
 /**
  * Push alerts that the server sends on its own:
- *  - to the admin's devices: a new guest's first visit, a new order, a new message;
+ *  - to the admin's devices: a new guest's first visit, a new or cancelled order, a new message;
  *  - to a guest: the restaurant replied to their message.
  * Nothing is sent unless Web Push is configured and the device opted in.
  */
@@ -13,6 +13,7 @@ import { deliver, pushReady, removeAdminSubscription, removeSubscription, type P
 export type AdminEvent =
   | { kind: "guest"; guestLang: string; today: number }
   | { kind: "order"; id: number; table: string; items: number; total: string }
+  | { kind: "cancel"; id: number; table: string }
   | { kind: "message"; guest: string; preview: string };
 
 type Text = { title: string; body: string };
@@ -21,25 +22,33 @@ const langName = (code: string) => code.toUpperCase();
 
 const ADMIN_TEXT: Record<Locale, (e: AdminEvent) => Text> = {
   uz: (e) =>
-    e.kind === "guest"
+    e.kind === "cancel"
+      ? { title: `Buyurtma #${e.id} bekor qilindi · Stol ${e.table}`, body: "Mehmon buyurtmani bekor qildi." }
+      : e.kind === "guest"
       ? { title: "Yangi mehmon", body: `Menyuni birinchi marta ochdi (${langName(e.guestLang)}) · bugun ${e.today} ta yangi` }
       : e.kind === "order"
         ? { title: `Yangi buyurtma #${e.id} · Stol ${e.table}`, body: `${e.items} ta taom · ${e.total}` }
         : { title: `Yangi xabar · Mehmon ${e.guest}`, body: e.preview },
   ko: (e) =>
-    e.kind === "guest"
+    e.kind === "cancel"
+      ? { title: `주문 #${e.id} 취소 · 테이블 ${e.table}`, body: "손님이 주문을 취소했습니다." }
+      : e.kind === "guest"
       ? { title: "새 손님", body: `처음으로 메뉴를 열었습니다 (${langName(e.guestLang)}) · 오늘 새 손님 ${e.today}명` }
       : e.kind === "order"
         ? { title: `새 주문 #${e.id} · 테이블 ${e.table}`, body: `${e.items}개 · ${e.total}` }
         : { title: `새 메시지 · 고객 ${e.guest}`, body: e.preview },
   ru: (e) =>
-    e.kind === "guest"
+    e.kind === "cancel"
+      ? { title: `Заказ #${e.id} отменён · стол ${e.table}`, body: "Гость отменил заказ." }
+      : e.kind === "guest"
       ? { title: "Новый гость", body: `Впервые открыл меню (${langName(e.guestLang)}) · сегодня новых: ${e.today}` }
       : e.kind === "order"
         ? { title: `Новый заказ #${e.id} · стол ${e.table}`, body: `Позиций: ${e.items} · ${e.total}` }
         : { title: `Новое сообщение · гость ${e.guest}`, body: e.preview },
   en: (e) =>
-    e.kind === "guest"
+    e.kind === "cancel"
+      ? { title: `Order #${e.id} cancelled · Table ${e.table}`, body: "The guest cancelled this order." }
+      : e.kind === "guest"
       ? { title: "New guest", body: `Opened the menu for the first time (${langName(e.guestLang)}) · ${e.today} new today` }
       : e.kind === "order"
         ? { title: `New order #${e.id} · Table ${e.table}`, body: `${e.items} item(s) · ${e.total}` }
@@ -63,7 +72,13 @@ export async function notifyAdmins(event: AdminEvent): Promise<void> {
       .prepare(`SELECT endpoint, p256dh, auth, lang FROM admin_push_subscriptions`)
       .all() as { endpoint: string; p256dh: string; auth: string; lang: string }[];
     if (rows.length === 0) return;
-    const tag = event.kind === "guest" ? "new-guest" : event.kind === "order" ? `order-${event.id}` : `chat-${event.guest}`;
+    // A cancellation replaces that order's "new order" alert on the device.
+    const tag =
+      event.kind === "guest"
+        ? "new-guest"
+        : event.kind === "order" || event.kind === "cancel"
+          ? `order-${event.id}`
+          : `chat-${event.guest}`;
     const targets = rows.map((row) => {
       const lang: Locale = isLocale(row.lang) ? row.lang : "en";
       const text = ADMIN_TEXT[lang](event.kind === "message" ? { ...event, preview: preview(event.preview) } : event);

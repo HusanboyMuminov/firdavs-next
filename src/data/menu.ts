@@ -312,7 +312,7 @@ export const dishes: Dish[] = [
       ru: "Нежная сочная баранина, медленно запечённая в тандыре.",
       en: "Tender, juicy lamb slow-roasted in a clay tandir oven.",
     },
-    price: null,
+    price: 14000,
     photo: photos.tandirKabob,
     keywords: ["tandir kabob", "tandyr kebab", "tandoor", "tandir", "lamb", "양고기"],
   },

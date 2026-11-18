@@ -93,7 +93,9 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [copied, setCopied] = useState(false);
-  const sending = useRef(false); // blocks a second Confirm while one is on its way
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelledId, setCancelledId] = useState<number | null>(null); // "Order #n was cancelled" notice
+  const sending = useRef(false); // blocks a second Confirm (or Cancel) while one is on its way
   const requestId = useRef<string | null>(null); // one per order: a retried Confirm can't order twice
 
   // Start over at the item list every time the sheet opens (adjusted during render).
@@ -103,6 +105,7 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
     if (open && phase !== "done") {
       setPhase("cart");
       setError(null);
+      setCancelledId(null);
     }
   }
   if (items.length === 0 && phase === "table") setPhase("cart");
@@ -137,6 +140,7 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
     e.preventDefault();
     requestId.current = newRequestId(); // a new order (the cart may have changed)
     setError(null);
+    setCancelledId(null);
     setPhase("table");
   };
 
@@ -190,6 +194,36 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
     }
   };
 
+  // Cancels the saved order (its SMS never went out): the server marks it
+  // cancelled so it can't be sent later. The dishes stay in the cart.
+  const cancelOrder = async () => {
+    if (!result || !requestId.current || sending.current) return;
+    sending.current = true;
+    setCancelling(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/orders", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId: requestId.current }),
+      });
+      // 404: the server has no such order, so there is nothing left to send either.
+      if (!response.ok && response.status !== 404) {
+        setError(t.cart.cancelFailed);
+        return;
+      }
+      setCancelledId(result.order.id);
+      setResult(null);
+      requestId.current = null;
+      setPhase("cart");
+    } catch {
+      setError(t.cart.offline);
+    } finally {
+      sending.current = false;
+      setCancelling(false);
+    }
+  };
+
   const finish = () => {
     clear();
     setTable("");
@@ -225,6 +259,13 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
           </button>
         </header>
 
+        {phase === "cart" && cancelledId !== null && (
+          <p className={styles.notice} role="status">
+            <CheckIcon size={17} />
+            {t.cart.cancelled(cancelledId)}
+          </p>
+        )}
+
         {phase === "done" && result ? (
           <div className={styles.flow} role="status">
             {result.sms === "sent" ? (
@@ -253,14 +294,35 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
                 </button>
               )}
             </div>
+            {error && (
+              <p className={styles.error} role="alert">
+                {error}
+              </p>
+            )}
             <div className={styles.footer}>
               {result.sms !== "sent" && (
-                <a href={smsLink(result.text)} className={styles.primary}>
-                  <MessageIcon size={19} />
-                  {t.cart.sendSms}
-                </a>
+                <div className={styles.actions}>
+                  <a href={smsLink(result.text)} className={styles.primary}>
+                    <MessageIcon size={19} />
+                    {t.cart.sendSms}
+                  </a>
+                  <button
+                    type="button"
+                    className={styles.cancel}
+                    onClick={cancelOrder}
+                    disabled={cancelling}
+                    aria-busy={cancelling || undefined}
+                  >
+                    {cancelling ? t.cart.cancelling : t.cart.cancelOrder}
+                  </button>
+                </div>
               )}
-              <button type="button" className={result.sms === "sent" ? styles.primary : styles.ghost} onClick={finish}>
+              <button
+                type="button"
+                className={result.sms === "sent" ? styles.primary : styles.ghost}
+                onClick={finish}
+                disabled={cancelling}
+              >
                 <CheckIcon size={18} />
                 {t.cart.done}
               </button>

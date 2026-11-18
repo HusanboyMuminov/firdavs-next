@@ -62,8 +62,10 @@ Interface text lives in `src/i18n/ui.ts`.
 
 **Photos.** The images are openly licensed photos from Wikimedia Commons and Flickr (cropped to
 4:3 and resized), not photos of your own dishes — a few show a close relative (tortellini in broth
-for chuchvara, a generic glass for branded drinks); they're credited on the Info screen, as their
-licenses require. **Xonim** has no photo yet (no openly licensed one exists), so it shows the menu's
+for chuchvara, a generic glass for branded drinks; Non (yarimta) is a whole non digitally cut in half).
+Their credits are recorded in `photos.ts` but no longer shown in the app — CC BY / CC BY-SA licenses
+ask for a credit where the photo is used, so replacing them with your own photos is the clean fix.
+**Xonim** has no photo yet (no openly licensed one exists), so it shows the menu's
 ornament until you add yours. To use your own photo, overwrite the file in `src/assets/menu/` with the same
 name (4:3, at least 1200×900 looks best) and delete its `credit` in `photos.ts`. Next.js serves
 them as AVIF/WebP in the size each screen needs, lazy-loads them, and a missing image file fails
@@ -90,7 +92,9 @@ Total: ₩25,000
 
 The guest sees "Sent to the kitchen" **only after the provider accepted the SMS**. If no provider
 is configured (or it fails), they're told so honestly and can send the same text from their own
-phone with one tap (or show the screen to a waiter). Every order — with its SMS status — is listed
+phone with one tap (or show the screen to a waiter), or press **Cancel** (Bekor qilish): the order
+is then marked cancelled on the server, can never be sent afterwards, the admin gets an alert, and the
+dishes stay in the cart. Every order — with its SMS status — is listed
 under **Orders** in the admin dashboard. Items whose price depends on the size (Gazli ichimliklar
 ₩2,500 / ₩3,500) or isn't set yet are marked "priced by staff" and kept out of the total.
 

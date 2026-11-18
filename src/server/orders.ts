@@ -20,7 +20,7 @@ export type Order = {
   unpriced: number;
   lang: string;
   createdAt: number;
-  smsStatus: SmsStatus | "pending";
+  smsStatus: SmsStatus | "pending" | "cancelled";
 };
 
 export const MAX_LINES = 50;
@@ -133,7 +133,7 @@ export function orderText(order: Order): string {
   ].join("\n");
 }
 
-function setSmsStatus(id: number, status: SmsStatus, error: string | null) {
+function setSmsStatus(id: number, status: Order["smsStatus"], error: string | null) {
   getDb().prepare("UPDATE orders SET sms_status = ?, sms_error = ? WHERE id = ?").run(status, error, id);
 }
 
@@ -143,6 +143,7 @@ export async function deliverOrder(order: Order): Promise<SmsStatus> {
     setSmsStatus(order.id, "not_configured", null);
     return "not_configured";
   }
+  setSmsStatus(order.id, "pending", null); // while the SMS is on its way the order can't be cancelled
   try {
     await sendSms(kitchenNumber(), orderText(order));
     setSmsStatus(order.id, "sent", null);
@@ -152,6 +153,23 @@ export async function deliverOrder(order: Order): Promise<SmsStatus> {
     setSmsStatus(order.id, "failed", String(error).slice(0, 300));
     return "failed";
   }
+}
+
+/**
+ * The guest cancels an order whose SMS never reached the kitchen. It stays on
+ * the admin list as "cancelled" and is never sent afterwards. Sent orders (or
+ * one being sent right now) can't be cancelled here.
+ */
+export function cancelOrder(requestId: string): { order: Order; changed: boolean } | "not_found" | "not_cancellable" {
+  const db = getDb();
+  const row = db.prepare(`${SELECT} WHERE request_id = ?`).get(requestId) as Row | undefined;
+  if (!row) return "not_found";
+  if (row.sms_status === "cancelled") return { order: toOrder(row), changed: false };
+  const { changes } = db
+    .prepare("UPDATE orders SET sms_status = 'cancelled' WHERE id = ? AND sms_status IN ('not_configured', 'failed')")
+    .run(row.id);
+  if (changes === 0) return "not_cancellable";
+  return { order: toOrder({ ...row, sms_status: "cancelled" }), changed: true };
 }
 
 /** Latest orders for the admin dashboard. */

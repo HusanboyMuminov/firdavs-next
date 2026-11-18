@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { dishes } from "@/data/menu";
-import type { PhotoCredit } from "@/data/photos";
 import { contactUrls, mapUrls, restaurant, type DayHours } from "@/data/restaurant";
 import type { Locale } from "@/i18n/config";
 import { fetchThread, linkChatPush, sendChatMessage, type ChatMessage } from "@/lib/chat-client";
@@ -41,16 +39,6 @@ const MAP_LABELS: Record<"naver" | "kakao" | "google", Record<Locale, string>> =
   kakao: { uz: "Kakao Map", ko: "카카오맵", ru: "Kakao Map", en: "Kakao Map" },
   google: { uz: "Google Maps", ko: "구글 지도", ru: "Google Maps", en: "Google Maps" },
 };
-
-/** Unique photo credits for the dishes currently on the menu. */
-const credits = (() => {
-  const seen = new Map<string, { credit: PhotoCredit; dish: string }>();
-  for (const d of dishes) {
-    const c = d.photo?.credit;
-    if (c && !seen.has(c.source)) seen.set(c.source, { credit: c, dish: d.name.uz });
-  }
-  return [...seen.values()];
-})();
 
 function Card({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
@@ -273,7 +261,6 @@ function ChatCard() {
   return (
     <div id="chat" ref={cardRef} className={styles.anchor}>
     <Card icon={<MessageIcon size={19} />} title={t.chat.title}>
-      <p className={styles.text}>{t.chat.subtitle}</p>
       <div className={styles.chatLog} ref={logRef} aria-live="polite">
         {messages?.length === 0 && (
           <p className={styles.chatEmpty}>
@@ -529,23 +516,6 @@ export function InfoView() {
         <h2 className={styles.cardTitle}>{t.info.language}</h2>
         <LanguageSwitcher lang={lang} onChange={setLang} label={t.info.language} />
       </section>
-
-      {credits.length > 0 && (
-        <details className={styles.credits}>
-          <summary>{t.info.photoCredits}</summary>
-          <p className={styles.note}>{t.info.photoCreditsNote}</p>
-          <ul className={styles.creditList}>
-            {credits.map(({ credit, dish }) => (
-              <li key={credit.source}>
-                <a href={credit.source} target="_blank" rel="noopener noreferrer">
-                  <span lang="uz">{dish}</span> — {credit.author}, {credit.license}
-                  <ExternalIcon size={13} />
-                </a>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
     </div>
   );
 }

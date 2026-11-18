@@ -607,3 +607,62 @@
 .tableInput[aria-invalid="true"] {
   border-color: #c2183b;
 }
+
+/* Saved order: "Send by SMS" with "Cancel" beside it. */
+.actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.actions .primary {
+  padding: 0 12px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.cancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  padding: 0 18px;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #9b1c1c;
+  background: #fdecec;
+  border: 1px solid #f3c6c6;
+  transition: transform 0.12s ease;
+}
+
+.cancel:active {
+  transform: scale(0.98);
+}
+
+.cancel:disabled {
+  opacity: 0.6;
+}
+
+/* "Order #n was cancelled" above the cart. */
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 20px 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--ink-2);
+  background: var(--ivory);
+  border: 1px solid var(--line);
+}
+
+.notice svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--green);
+}
