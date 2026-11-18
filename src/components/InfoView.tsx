@@ -1,6 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import deliveryCard from "@/assets/delivery-card.png";
 import { contactUrls, mapUrls, restaurant, type DayHours } from "@/data/restaurant";
 import type { Locale } from "@/i18n/config";
 import { fetchThread, linkChatPush, sendChatMessage, type ChatMessage } from "@/lib/chat-client";
@@ -29,7 +31,6 @@ import {
   TelegramIcon,
   WhatsAppIcon,
 } from "./icons";
-import { LanguageSwitcher } from "./LanguageSwitcher";
 import { OpenStatus } from "./OpenStatus";
 import { StarMark } from "./Ornament";
 import styles from "./InfoView.module.css";
@@ -40,9 +41,10 @@ const MAP_LABELS: Record<"naver" | "kakao" | "google", Record<Locale, string>> =
   google: { uz: "Google Maps", ko: "구글 지도", ru: "Google Maps", en: "Google Maps" },
 };
 
-function Card({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+function Card({ icon, title, media, children }: { icon: ReactNode; title: string; media?: ReactNode; children: ReactNode }) {
   return (
     <section className={styles.card}>
+      {media}
       <h2 className={styles.cardTitle}>
         <span className={styles.cardIcon}>{icon}</span>
         {title}
@@ -416,7 +418,7 @@ function NotificationsCard() {
 }
 
 export function InfoView() {
-  const { t, lang, setLang } = useApp();
+  const { t, lang } = useApp();
   const maps = mapUrls();
   const [copied, setCopied] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -480,7 +482,19 @@ export function InfoView() {
       )}
 
       {restaurant.delivery && (
-        <Card icon={<ScooterIcon size={19} />} title={t.info.delivery}>
+        <Card
+          icon={<ScooterIcon size={19} />}
+          title={t.info.delivery}
+          media={
+            <Image
+              src={deliveryCard}
+              alt={`${restaurant.name} · ${t.info.delivery} · ${restaurant.phoneDisplay}`}
+              sizes="(max-width: 520px) 92vw, 480px"
+              placeholder="blur"
+              className={styles.deliveryCard}
+            />
+          }
+        >
           <p className={styles.deliveryNote}>{t.info.deliveryNote}</p>
           {restaurant.deliveryApps.length > 0 && (
             <ul className={styles.chips}>
@@ -510,11 +524,6 @@ export function InfoView() {
           ))}
         </ul>
       </Card>
-
-      <section className={styles.card}>
-        <h2 className={styles.cardTitle}>{t.info.language}</h2>
-        <LanguageSwitcher lang={lang} onChange={setLang} label={t.info.language} />
-      </section>
     </div>
   );
 }

@@ -81,6 +81,10 @@ const en = {
     sentHint: (table: string) => `Thank you! We’ll bring your order to table ${table}.`,
     savedTitle: "Order saved — please send it",
     savedHint: (phone: string) => `We couldn’t text the kitchen automatically. Send this order by SMS to ${phone} or show this screen to a waiter.`,
+    savedHintTelegram: (phone: string) => `We couldn’t send your order through the Telegram bot. Send it by SMS to ${phone} or show this screen to a waiter.`,
+    channelTitle: "Send the order via",
+    viaSms: "SMS",
+    viaTelegram: "Telegram Bot",
     sendSms: "Send by SMS",
     cancelOrder: "Cancel order",
     cancelling: "Cancelling…",
@@ -220,6 +224,12 @@ const en = {
       smsOn: (provider: string, to: string) => `Kitchen SMS: ${provider} → ${to}`,
       smsMissing:
         "Kitchen SMS isn’t configured. Set SOLAPI_API_KEY, SOLAPI_API_SECRET and SMS_FROM (or Twilio) on the server. Until then orders appear here and guests are asked to send them by SMS themselves.",
+      tgSent: "Telegram sent",
+      tgFailed: "Telegram failed",
+      tgNotConfigured: "No Telegram",
+      tgOn: "Telegram bot: orders are posted to the restaurant chat",
+      tgMissing:
+        "The Telegram bot isn’t configured. Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID on the server. Until then, guests who choose Telegram are asked to send the order by SMS.",
     },
     alerts: {
       title: "Alerts on this device",
@@ -324,6 +334,10 @@ const uz: UI = {
     sentHint: (table: string) => `Rahmat! Buyurtmangizni ${table}-stolga olib kelamiz.`,
     savedTitle: "Buyurtma saqlandi — iltimos, yuboring",
     savedHint: (phone: string) => `Oshxonaga avtomatik SMS yuborib boʻlmadi. Buyurtmani ${phone} raqamiga SMS qilib yuboring yoki ushbu ekranni ofitsiantga koʻrsating.`,
+    savedHintTelegram: (phone: string) => `Buyurtmani Telegram bot orqali yuborib boʻlmadi. Uni ${phone} raqamiga SMS qilib yuboring yoki ushbu ekranni ofitsiantga koʻrsating.`,
+    channelTitle: "Buyurtmani qanday yuboramiz?",
+    viaSms: "SMS",
+    viaTelegram: "Telegram Bot",
     sendSms: "SMS orqali yuborish",
     cancelOrder: "Bekor qilish",
     cancelling: "Bekor qilinmoqda…",
@@ -463,6 +477,12 @@ const uz: UI = {
       smsOn: (provider: string, to: string) => `Oshxona SMS: ${provider} → ${to}`,
       smsMissing:
         "Oshxonaga SMS sozlanmagan. Serverda SOLAPI_API_KEY, SOLAPI_API_SECRET va SMS_FROM (yoki Twilio) ni oʻrnating. Shu paytgacha buyurtmalar shu yerda koʻrinadi, mehmonlardan esa ularni oʻzlari SMS qilib yuborish soʻraladi.",
+      tgSent: "Telegram yuborildi",
+      tgFailed: "Telegram yuborilmadi",
+      tgNotConfigured: "Telegram yoʻq",
+      tgOn: "Telegram bot: buyurtmalar restoran chatiga yuboriladi",
+      tgMissing:
+        "Telegram bot sozlanmagan. Serverda TELEGRAM_BOT_TOKEN va TELEGRAM_CHAT_ID ni oʻrnating. Shu paytgacha Telegram’ni tanlagan mehmonlardan buyurtmani SMS qilib yuborish soʻraladi.",
     },
     alerts: {
       title: "Shu qurilmadagi bildirishnomalar",
@@ -565,6 +585,10 @@ const ko: UI = {
     sentHint: (table: string) => `감사합니다! ${table}번 테이블로 가져다드릴게요.`,
     savedTitle: "주문이 저장됐어요 — 전송해 주세요",
     savedHint: (phone: string) => `주방에 자동으로 문자를 보내지 못했어요. 이 주문을 ${phone}(으)로 문자로 보내 주시거나 이 화면을 직원에게 보여 주세요.`,
+    savedHintTelegram: (phone: string) => `텔레그램 봇으로 주문을 보내지 못했어요. ${phone}(으)로 문자로 보내 주시거나 이 화면을 직원에게 보여 주세요.`,
+    channelTitle: "주문 보내는 방법",
+    viaSms: "문자 (SMS)",
+    viaTelegram: "텔레그램 봇",
     sendSms: "문자로 보내기",
     cancelOrder: "주문 취소",
     cancelling: "취소하는 중…",
@@ -703,6 +727,12 @@ const ko: UI = {
       smsOn: (provider: string, to: string) => `주방 문자: ${provider} → ${to}`,
       smsMissing:
         "주방 문자 발송이 설정되지 않았습니다. 서버에 SOLAPI_API_KEY, SOLAPI_API_SECRET, SMS_FROM(또는 Twilio)을 설정하세요. 그전까지 주문은 여기에 표시되고, 손님에게는 직접 문자로 보내 달라고 안내합니다.",
+      tgSent: "텔레그램 전송됨",
+      tgFailed: "텔레그램 실패",
+      tgNotConfigured: "텔레그램 없음",
+      tgOn: "텔레그램 봇: 주문이 레스토랑 채팅으로 전송됩니다",
+      tgMissing:
+        "텔레그램 봇이 설정되지 않았습니다. 서버에 TELEGRAM_BOT_TOKEN과 TELEGRAM_CHAT_ID를 설정하세요. 그전까지 텔레그램을 선택한 손님에게는 문자로 보내 달라고 안내합니다.",
     },
     alerts: {
       title: "이 기기 알림",
@@ -806,6 +836,10 @@ const ru: UI = {
     sentHint: (table: string) => `Спасибо! Мы принесём заказ к столу ${table}.`,
     savedTitle: "Заказ сохранён — отправьте его",
     savedHint: (phone: string) => `Не удалось автоматически отправить SMS на кухню. Отправьте этот заказ SMS на номер ${phone} или покажите экран официанту.`,
+    savedHintTelegram: (phone: string) => `Не удалось отправить заказ через Telegram-бот. Отправьте его SMS на номер ${phone} или покажите экран официанту.`,
+    channelTitle: "Как отправить заказ?",
+    viaSms: "SMS",
+    viaTelegram: "Telegram-бот",
     sendSms: "Отправить по SMS",
     cancelOrder: "Отменить",
     cancelling: "Отмена…",
@@ -945,6 +979,12 @@ const ru: UI = {
       smsOn: (provider: string, to: string) => `SMS на кухню: ${provider} → ${to}`,
       smsMissing:
         "SMS на кухню не настроены. Укажите на сервере SOLAPI_API_KEY, SOLAPI_API_SECRET и SMS_FROM (или Twilio). До этого заказы видны здесь, а гостей просят отправить их по SMS самостоятельно.",
+      tgSent: "Telegram отправлен",
+      tgFailed: "Telegram не ушёл",
+      tgNotConfigured: "Без Telegram",
+      tgOn: "Telegram-бот: заказы приходят в чат ресторана",
+      tgMissing:
+        "Telegram-бот не настроен. Укажите на сервере TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID. До этого гостей, выбравших Telegram, просят отправить заказ по SMS.",
     },
     alerts: {
       title: "Уведомления на этом устройстве",

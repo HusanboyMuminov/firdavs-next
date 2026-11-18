@@ -11,9 +11,9 @@ const cancelLimiter = createRateLimiter(30, 10 * 60_000);
 const REQUEST_ID = /^[A-Za-z0-9_-]{16,64}$/;
 
 /**
- * Places a table order: { requestId, table, lang, items: [{ id, qty }] }.
- * Stored first, then sent to the kitchen by SMS. The response says honestly
- * whether the SMS went out: "sent" | "failed" | "not_configured".
+ * Places a table order: { requestId, table, lang, channel: "sms" | "telegram", items: [{ id, qty }] }.
+ * Stored first, then sent to the kitchen by SMS or the Telegram bot. The response says honestly
+ * whether it went out: "sent" | "failed" | "not_configured".
  */
 export async function POST(request: NextRequest) {
   if (!isSameOrigin(request)) return errorResponse(403, "forbidden");
@@ -22,14 +22,21 @@ export async function POST(request: NextRequest) {
   const table = body?.table;
   const lang = body?.lang;
   const lines = parseItems(body?.items);
-  if (typeof requestId !== "string" || !REQUEST_ID.test(requestId) || !isLocale(lang) || !lines) {
+  const channel: unknown = body?.channel ?? "sms"; // the guest's choice: "sms" | "telegram"
+  if (
+    typeof requestId !== "string" ||
+    !REQUEST_ID.test(requestId) ||
+    !isLocale(lang) ||
+    !lines ||
+    (channel !== "sms" && channel !== "telegram")
+  ) {
     return errorResponse(400, "invalid_request");
   }
   if (!isTableNumber(table)) return errorResponse(400, "invalid_table");
 
   try {
     if (!orderExists(requestId) && !limiter.take(clientIp(request))) return errorResponse(429, "rate_limited");
-    const { order, duplicate } = createOrder({ requestId, table, lines, lang });
+    const { order, duplicate } = createOrder({ requestId, table, lines, lang, channel });
     if (order.smsStatus === "cancelled") return errorResponse(409, "cancelled"); // never sent again
     let sms = order.smsStatus;
     if (!duplicate || sms === "failed") {
@@ -42,7 +49,8 @@ export async function POST(request: NextRequest) {
     return json(
       {
         order: { id: order.id, table: order.table, total: order.total, unpriced: order.unpriced, createdAt: order.createdAt },
-        sms,
+        channel: order.channel,
+        sms, // delivery status of the chosen channel
         text: orderText(order),
       },
       duplicate ? 200 : 201,

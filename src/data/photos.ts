@@ -118,7 +118,6 @@ export const photos = {
   },
   bifshteks: {
     src: bifshteks,
-    credit: { author: "Davidwbaker", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Steak_Frites_with_Bordelaise,_July_2020.jpg" },
   },
   borjomi: {
     src: borjomi,
@@ -286,7 +285,6 @@ export const photos = {
   },
   qozonKabob: {
     src: qozonKabob,
-    credit: { author: "Mike Cowlishaw", license: "CC BY 3.0", source: "https://commons.wikimedia.org/wiki/File:Chuletillas-El-Mazuco.jpg" },
   },
   qurtoba: {
     src: qurtoba,
@@ -302,7 +300,6 @@ export const photos = {
   },
   shorva: {
     src: shorva,
-    credit: { author: "Daderot", license: "CC0", source: "https://commons.wikimedia.org/wiki/File:Vegetable_beef_soup_-_Arlington,_MA.jpg" },
   },
   sutliChoy: {
     src: sutliChoy,
@@ -310,7 +307,6 @@ export const photos = {
   },
   tabaka: {
     src: tabaka,
-    credit: { author: "Pannet", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:%D0%A6%D1%8B%D0%BF%D0%BB%D0%B5%D0%BD%D0%BE%D0%BA_%D1%82%D0%B0%D0%B1%D0%B0%D0%BA%D0%B0.jpg" },
   },
   tandirKabob: {
     src: tandirKabob,
@@ -348,7 +344,8 @@ export const photos = {
     src: uygurLagmon,
     credit: { author: "К.Артём.1", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Laghman,_Novosibirsk_01.jpg" },
   },
-  // The restaurant's own photos (no credit needed): xonim, ilikShorva, qovurdoq.
+  // The restaurant's own photos (no credit needed): xonim, ilikShorva, qovurdoq, shorva, bifshteks,
+  // qozonKabob, tabaka.
   xonim: {
     src: xonim,
   },

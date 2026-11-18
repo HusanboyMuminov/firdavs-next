@@ -33,6 +33,7 @@ host's environment in production. `.env*` files are gitignored (only `.env.examp
 | `SMS_FROM` | kitchen SMS | Sender number registered with the provider (Korea requires pre-registration). |
 | `ORDER_SMS_TO` | kitchen SMS | Kitchen phone; default 010-3238-2555. |
 | `TABLE_COUNT` | orders | Optional: highest table number (default 999). |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Telegram orders | Bot token from @BotFather and the chat that receives orders (see below). |
 
 The private VAPID key and the admin password are only read on the server; the browser only ever
 gets the public VAPID key (`/api/push/key`).
@@ -75,9 +76,10 @@ the build instead of shipping a broken image.
 
 Guests tap **+** on any dish or drink (or "Add to cart" in its detail sheet), adjust quantities in
 the cart (line subtotals and the total update instantly), press **Order**, enter their **table
-number** and press **Confirm**. The order is validated and saved on the server (prices always come
-from `menu.ts`, never from the browser; one order per Confirm, so double taps can't order twice),
-then sent to the kitchen phone by **SMS through the configured provider**:
+number**, choose how to send it — **SMS** or **Telegram Bot** — and press **Confirm**. The order
+is validated and saved on the server (prices always come from `menu.ts`, never from the browser; one
+order per Confirm, so double taps can't order twice), then sent to the kitchen **by SMS through the
+configured provider** or **posted by the restaurant's Telegram bot to the orders chat** (same text):
 
 ```
 FIRDAVS RESTAURANT
@@ -90,13 +92,19 @@ Order #12 · Table 7
 Total: ₩25,000
 ```
 
-The guest sees "Sent to the kitchen" **only after the provider accepted the SMS**. If no provider
-is configured (or it fails), they're told so honestly and can send the same text from their own
+The guest sees "Sent to the kitchen" **only after the SMS provider (or Telegram) accepted the
+message**. If the chosen channel isn't configured (or it fails), they're told so honestly and can send the same text from their own
 phone with one tap (or show the screen to a waiter), or press **Cancel** (Bekor qilish): the order
 is then marked cancelled on the server, can never be sent afterwards, the admin gets an alert, and the
 dishes stay in the cart. Every order — with its SMS status — is listed
 under **Orders** in the admin dashboard. Items whose price depends on the size (Gazli ichimliklar
 ₩2,500 / ₩3,500) or isn't set yet are marked "priced by staff" and kept out of the total.
+
+**Setting up the Telegram bot** (once): in Telegram, open **@BotFather**, send `/newbot` and copy the
+token into `TELEGRAM_BOT_TOKEN`. Then open your new bot and press **Start** (or add the bot to a staff
+group and send any message there), open `https://api.telegram.org/bot<TOKEN>/getUpdates` in a browser
+and copy the number after `"chat":{"id":` into `TELEGRAM_CHAT_ID` (group ids start with `-`). Restart
+the server; the admin dashboard then shows "Telegram bot: orders are posted to the restaurant chat".
 
 ## Messages from guests
 

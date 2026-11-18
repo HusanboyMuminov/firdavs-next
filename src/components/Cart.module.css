@@ -666,3 +666,60 @@
   margin-top: 1px;
   color: var(--green);
 }
+
+/* How the order is sent: SMS or Telegram bot (the guest's choice). */
+.channels {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 20px 0;
+}
+
+.channelOptions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.channel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 0 10px;
+  border-radius: 14px;
+  border: 1.5px solid var(--line-strong);
+  background: var(--ivory);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-2);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.channel input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.channel svg {
+  flex-shrink: 0;
+}
+
+.channel[data-active] {
+  border-color: var(--burgundy);
+  background: var(--burgundy-tint);
+  color: var(--burgundy);
+}
+
+.channel:has(input:focus-visible) {
+  outline: 2px solid var(--burgundy);
+  outline-offset: 2px;
+}

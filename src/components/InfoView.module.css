@@ -677,3 +677,12 @@
 .chatNotifyBtn:disabled {
   opacity: 0.6;
 }
+
+/* Business card at the top of the Delivery section (the uploaded image as-is). */
+.deliveryCard {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: 14px;
+  border-radius: 14px;
+}

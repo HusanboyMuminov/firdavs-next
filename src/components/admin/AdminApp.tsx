@@ -589,9 +589,14 @@ type AdminOrder = {
   total: number;
   unpriced: number;
   createdAt: number;
+  channel: "sms" | "telegram";
   smsStatus: "sent" | "failed" | "not_configured" | "pending" | "cancelled";
 };
-type OrdersData = { orders: AdminOrder[]; sms: { provider: "solapi" | "twilio" | null; to: string } };
+type OrdersData = {
+  orders: AdminOrder[];
+  sms: { provider: "solapi" | "twilio" | null; to: string };
+  telegram: boolean;
+};
 
 const PROVIDER_NAME = { solapi: "Solapi", twilio: "Twilio" } as const;
 
@@ -616,16 +621,18 @@ function OrdersPanel({ t, lang, live, now }: { t: UI; lang: Locale; live: boolea
     };
   }, [live]);
 
-  const status = (s: AdminOrder["smsStatus"]) =>
-    s === "cancelled"
+  const status = ({ smsStatus: s, channel }: AdminOrder) => {
+    const tg = channel === "telegram";
+    return s === "cancelled"
       ? t.admin.orders.cancelled
       : s === "sent"
-        ? t.admin.orders.sent
+        ? tg ? t.admin.orders.tgSent : t.admin.orders.sent
         : s === "failed"
-          ? t.admin.orders.failed
+          ? tg ? t.admin.orders.tgFailed : t.admin.orders.failed
           : s === "pending"
             ? t.admin.orders.pending
-            : t.admin.orders.notConfigured;
+            : tg ? t.admin.orders.tgNotConfigured : t.admin.orders.notConfigured;
+  };
 
   return (
     <section className={`${styles.card} ${styles.wide}`} aria-labelledby="admin-orders">
@@ -638,6 +645,12 @@ function OrdersPanel({ t, lang, live, now }: { t: UI; lang: Locale; live: boolea
           <p className={styles.muted}>{t.admin.orders.smsOn(PROVIDER_NAME[data.sms.provider], data.sms.to)}</p>
         ) : (
           <p className={styles.warn}>{t.admin.orders.smsMissing}</p>
+        ))}
+      {data &&
+        (data.telegram ? (
+          <p className={styles.muted}>{t.admin.orders.tgOn}</p>
+        ) : (
+          <p className={styles.warn}>{t.admin.orders.tgMissing}</p>
         ))}
       {data === null ? (
         <div className={styles.loadingSmall} aria-busy="true" />
@@ -652,7 +665,7 @@ function OrdersPanel({ t, lang, live, now }: { t: UI; lang: Locale; live: boolea
                 <span className={styles.threadName}>{t.admin.orders.table(o.table)}</span>
                 <span className={styles.threadTime}>{formatAgo(Math.max(0, now - o.createdAt), lang)}</span>
                 <span className={styles.smsChip} data-status={o.smsStatus}>
-                  {status(o.smsStatus)}
+                  {status(o)}
                 </span>
               </div>
               <ul className={styles.orderLines}>

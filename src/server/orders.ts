@@ -3,13 +3,17 @@ import { dishById } from "@/data/menu";
 import { formatPrice, priceLabel, unitPrice } from "@/lib/format";
 import { getDb } from "./db";
 import { kitchenNumber, sendSms, smsProvider } from "./sms";
+import { sendTelegram, telegramReady } from "./telegram";
 
 /**
- * Table orders: stored first, then sent to the kitchen phone by SMS. Prices are
- * always taken from the menu on the server, never from the browser.
+ * Table orders: stored first, then sent to the kitchen — by SMS or through the
+ * restaurant's Telegram bot, whichever the guest chose. Prices are always taken
+ * from the menu on the server, never from the browser.
  */
 
 export type OrderLine = { id: string; name: string; qty: number; unit: number | null; label: string | null };
+export type OrderChannel = "sms" | "telegram";
+/** Delivery status of the chosen channel (the name predates the Telegram option). */
 export type SmsStatus = "sent" | "failed" | "not_configured";
 export type Order = {
   id: number;
@@ -20,6 +24,7 @@ export type Order = {
   unpriced: number;
   lang: string;
   createdAt: number;
+  channel: OrderChannel;
   smsStatus: SmsStatus | "pending" | "cancelled";
 };
 
@@ -59,6 +64,7 @@ type Row = {
   unpriced: number;
   lang: string;
   created_at: number;
+  channel: OrderChannel;
   sms_status: Order["smsStatus"];
 };
 
@@ -70,17 +76,24 @@ const toOrder = (r: Row): Order => ({
   unpriced: r.unpriced,
   lang: r.lang,
   createdAt: r.created_at,
+  channel: r.channel,
   smsStatus: r.sms_status,
 });
 
-const SELECT = "SELECT id, table_no, lines, total, unpriced, lang, created_at, sms_status FROM orders";
+const SELECT = "SELECT id, table_no, lines, total, unpriced, lang, created_at, channel, sms_status FROM orders";
 
 export function orderExists(requestId: string): boolean {
   return Boolean(getDb().prepare("SELECT 1 FROM orders WHERE request_id = ?").get(requestId));
 }
 
 /** Stores the order once per request id; a repeated request returns the existing one. */
-export function createOrder(input: { requestId: string; table: string; lines: OrderLine[]; lang: string }) {
+export function createOrder(input: {
+  requestId: string;
+  table: string;
+  lines: OrderLine[];
+  lang: string;
+  channel: OrderChannel;
+}) {
   const db = getDb();
   const existing = db.prepare(`${SELECT} WHERE request_id = ?`).get(input.requestId) as Row | undefined;
   if (existing) return { order: toOrder(existing), duplicate: true };
@@ -88,10 +101,10 @@ export function createOrder(input: { requestId: string; table: string; lines: Or
   const unpriced = input.lines.filter((l) => l.unit === null).length;
   const info = db
     .prepare(
-      `INSERT INTO orders (request_id, table_no, lines, total, unpriced, lang, created_at, sms_status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
+      `INSERT INTO orders (request_id, table_no, lines, total, unpriced, lang, created_at, channel, sms_status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
     )
-    .run(input.requestId, input.table, JSON.stringify(input.lines), total, unpriced, input.lang, Date.now());
+    .run(input.requestId, input.table, JSON.stringify(input.lines), total, unpriced, input.lang, Date.now(), input.channel);
   const row = db.prepare(`${SELECT} WHERE id = ?`).get(Number(info.lastInsertRowid)) as Row;
   return { order: toOrder(row), duplicate: false };
 }
@@ -137,19 +150,21 @@ function setSmsStatus(id: number, status: Order["smsStatus"], error: string | nu
   getDb().prepare("UPDATE orders SET sms_status = ?, sms_error = ? WHERE id = ?").run(status, error, id);
 }
 
-/** Sends the order to the kitchen phone and records the result. */
+/** Sends the order to the kitchen (SMS or Telegram bot, as chosen) and records the result. */
 export async function deliverOrder(order: Order): Promise<SmsStatus> {
-  if (!smsProvider()) {
+  const telegram = order.channel === "telegram";
+  if (telegram ? !telegramReady() : !smsProvider()) {
     setSmsStatus(order.id, "not_configured", null);
     return "not_configured";
   }
-  setSmsStatus(order.id, "pending", null); // while the SMS is on its way the order can't be cancelled
+  setSmsStatus(order.id, "pending", null); // while it's on its way the order can't be cancelled
   try {
-    await sendSms(kitchenNumber(), orderText(order));
+    if (telegram) await sendTelegram(orderText(order));
+    else await sendSms(kitchenNumber(), orderText(order));
     setSmsStatus(order.id, "sent", null);
     return "sent";
   } catch (error) {
-    console.error(`[orders] SMS for order #${order.id} failed:`, error);
+    console.error(`[orders] ${telegram ? "Telegram" : "SMS"} for order #${order.id} failed:`, error);
     setSmsStatus(order.id, "failed", String(error).slice(0, 300));
     return "failed";
   }

@@ -78,8 +78,9 @@ CREATE TABLE IF NOT EXISTS orders (
   unpriced   INTEGER NOT NULL,
   lang       TEXT NOT NULL,
   created_at INTEGER NOT NULL,
-  sms_status TEXT NOT NULL,
-  sms_error  TEXT
+  sms_status TEXT NOT NULL,  -- delivery status of the chosen channel (SMS or Telegram)
+  sms_error  TEXT,
+  channel    TEXT NOT NULL DEFAULT 'sms'  -- 'sms' | 'telegram' (the guest's choice)
 );
 CREATE INDEX IF NOT EXISTS orders_created ON orders(created_at);
 
@@ -106,11 +107,20 @@ type GlobalWithDb = typeof globalThis & { __firdavsDb?: Database.Database };
 // a connection reused across dev hot reloads (every statement is IF NOT EXISTS).
 let schemaApplied = false;
 
+/** Columns added after a table was first created (CREATE TABLE IF NOT EXISTS won't add them). */
+function migrate(db: Database.Database) {
+  const columns = db.prepare("PRAGMA table_info(orders)").all() as { name: string }[];
+  if (!columns.some((c) => c.name === "channel")) {
+    db.exec("ALTER TABLE orders ADD COLUMN channel TEXT NOT NULL DEFAULT 'sms'");
+  }
+}
+
 export function getDb(): Database.Database {
   const g = globalThis as GlobalWithDb;
   if (g.__firdavsDb) {
     if (!schemaApplied) {
       g.__firdavsDb.exec(SCHEMA);
+      migrate(g.__firdavsDb);
       schemaApplied = true;
     }
     return g.__firdavsDb;
@@ -124,6 +134,7 @@ export function getDb(): Database.Database {
   db.pragma("synchronous = NORMAL");
   db.pragma("busy_timeout = 3000");
   db.exec(SCHEMA);
+  migrate(db);
   schemaApplied = true;
 
   g.__firdavsDb = db; // reuse across hot reloads / requests

@@ -5,7 +5,7 @@ import { restaurant } from "@/data/restaurant";
 import { orderTotal, useCart, type CartItem } from "@/lib/cart";
 import { formatPrice, priceLabel, unitPrice } from "@/lib/format";
 import { useApp } from "./AppContext";
-import { BagIcon, CheckIcon, CloseIcon, CopyIcon, MessageIcon, MinusIcon, PlusIcon, TrashIcon } from "./icons";
+import { BagIcon, CheckIcon, CloseIcon, CopyIcon, MessageIcon, MinusIcon, PlusIcon, TelegramIcon, TrashIcon } from "./icons";
 import styles from "./Cart.module.css";
 
 /**
@@ -16,8 +16,11 @@ import styles from "./Cart.module.css";
  */
 
 type Phase = "cart" | "table" | "done";
+type Channel = "sms" | "telegram";
 type Result = {
   order: { id: number; table: string; total: number; unpriced: number; createdAt: number };
+  channel: Channel;
+  /** Delivery status of the chosen channel (SMS or Telegram bot). */
   sms: "sent" | "failed" | "not_configured" | "pending";
   text: string;
 };
@@ -89,6 +92,7 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [phase, setPhase] = useState<Phase>("cart");
   const [table, setTable] = useState("");
+  const [channel, setChannel] = useState<Channel>("sms"); // how the order is sent: SMS or Telegram bot
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
@@ -163,6 +167,7 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
           requestId: requestId.current,
           table: tableNo,
           lang,
+          channel,
           items: items.map(({ dish, qty }) => ({ id: dish.id, qty })),
         }),
       });
@@ -282,7 +287,11 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
                   <MessageIcon size={28} />
                 </div>
                 <p className={styles.resultTitle}>{t.cart.savedTitle}</p>
-                <p className={styles.sentHint}>{t.cart.savedHint(restaurant.phoneDisplay)}</p>
+                <p className={styles.sentHint}>
+                  {result.channel === "telegram"
+                    ? t.cart.savedHintTelegram(restaurant.phoneDisplay)
+                    : t.cart.savedHint(restaurant.phoneDisplay)}
+                </p>
               </>
             )}
             <div className={styles.fallback}>
@@ -353,12 +362,9 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
                       <LinePrice item={item} />
                     </div>
                     <div className={styles.qty}>
-                      <button
-                        type="button"
-                        aria-label={qty === 1 ? t.cart.remove : t.cart.decrease}
-                        onClick={() => changeQty(dish.id, qty - 1)}
-                      >
-                        {qty === 1 ? <TrashIcon size={16} /> : <MinusIcon size={16} />}
+                      {/* −1 each press; the dish leaves the cart only when its quantity reaches 0. */}
+                      <button type="button" aria-label={t.cart.decrease} onClick={() => changeQty(dish.id, qty - 1)}>
+                        <MinusIcon size={16} />
                       </button>
                       <span className={styles.qtyValue} aria-live="polite">
                         {qty}
@@ -403,6 +409,27 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
                 aria-invalid={error === t.cart.tableInvalid || error === t.cart.tableUnknown || undefined}
               />
             </label>
+            <div className={styles.channels} role="group" aria-labelledby="cart-channel">
+              <p id="cart-channel" className={styles.flowHint}>
+                {t.cart.channelTitle}
+              </p>
+              <div className={styles.channelOptions}>
+                {(["sms", "telegram"] as const).map((c) => (
+                  <label key={c} className={styles.channel} data-active={channel === c || undefined}>
+                    <input
+                      type="radio"
+                      name="order-channel"
+                      value={c}
+                      checked={channel === c}
+                      onChange={() => setChannel(c)}
+                      disabled={busy}
+                    />
+                    {c === "sms" ? <MessageIcon size={18} /> : <TelegramIcon size={18} />}
+                    {c === "sms" ? t.cart.viaSms : t.cart.viaTelegram}
+                  </label>
+                ))}
+              </div>
+            </div>
             <div className={styles.review}>
               <ul className={styles.reviewList}>
                 {items.map(({ dish, qty }) => (

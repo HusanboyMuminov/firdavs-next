@@ -4,13 +4,18 @@ import { isAdminRequest } from "@/server/admin-auth";
 import { errorResponse, json } from "@/server/http";
 import { listOrders } from "@/server/orders";
 import { kitchenNumber, smsProvider } from "@/server/sms";
+import { telegramReady } from "@/server/telegram";
 
-/** Admin: latest table orders + whether kitchen SMS is configured. */
+/** Admin: latest table orders + whether kitchen SMS and the Telegram bot are configured. */
 export async function GET(request: NextRequest) {
   await connection(); // per-request: never prerendered at build time
   try {
     if (!isAdminRequest(request)) return errorResponse(401, "unauthorized");
-    return json({ orders: listOrders(30), sms: { provider: smsProvider(), to: kitchenNumber() } });
+    return json({
+      orders: listOrders(30),
+      sms: { provider: smsProvider(), to: kitchenNumber() },
+      telegram: telegramReady(),
+    });
   } catch (error) {
     unstable_rethrow(error);
     console.error("[api/admin/orders]", error);
