@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import qrStand from "@/assets/firdavs-qr.jpg";
 import { categories, dishes, dishesByCategory, type Dish } from "@/data/menu";
 import { contactUrls, mapUrls, restaurant } from "@/data/restaurant";
 import { priceLabel } from "@/lib/format";
@@ -84,6 +86,20 @@ export function HomeView() {
 
       <InfoTeaser />
       <MenuFooter />
+
+      {/* The restaurant's QR table stand, served as-is (no re-compression) so the code stays crisp. */}
+      <section className={styles.qr} aria-label="QR">
+        <Image
+          src={qrStand}
+          alt={`${restaurant.name} QR`}
+          unoptimized
+          placeholder="blur"
+          className={styles.qrImage}
+        />
+        <p className={styles.qrSlogan} lang="uz">
+          FIRDAVS - ta’m va sifat manzili
+        </p>
+      </section>
     </div>
   );
 }

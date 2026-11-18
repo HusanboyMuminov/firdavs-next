@@ -318,7 +318,6 @@ function ChatCard() {
           {t.chat.notifyOn}
         </p>
       )}
-      <p className={styles.note}>{t.chat.privacy}</p>
     </Card>
     </div>
   );
