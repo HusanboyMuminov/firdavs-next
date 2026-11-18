@@ -60,13 +60,13 @@ TypeScript reports any missing translation). Descriptions describe each dish in 
 check them against your kitchen (e.g. lamb vs beef). `tags: ["featured"]` picks the Home carousel.
 Interface text lives in `src/i18n/ui.ts`.
 
-**Photos.** The images are openly licensed photos from Wikimedia Commons and Flickr (cropped to
+**Photos.** Xonim, Ilik shoʻrva and Qovurdoq use the restaurant's own photos. The others are
+openly licensed photos from Wikimedia Commons and Flickr (cropped to
 4:3 and resized), not photos of your own dishes — a few show a close relative (tortellini in broth
 for chuchvara, a generic glass for branded drinks; Non (yarimta) is a whole non digitally cut in half).
 Their credits are recorded in `photos.ts` but no longer shown in the app — CC BY / CC BY-SA licenses
 ask for a credit where the photo is used, so replacing them with your own photos is the clean fix.
-**Xonim** has no photo yet (no openly licensed one exists), so it shows the menu's
-ornament until you add yours. To use your own photo, overwrite the file in `src/assets/menu/` with the same
+A dish without a photo shows the menu's ornament. To use your own photo, overwrite the file in `src/assets/menu/` with the same
 name (4:3, at least 1200×900 looks best) and delete its `credit` in `photos.ts`. Next.js serves
 them as AVIF/WebP in the size each screen needs, lazy-loads them, and a missing image file fails
 the build instead of shipping a broken image.

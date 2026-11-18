@@ -272,7 +272,7 @@ export const dishes: Dish[] = [
     },
     price: 11000,
     portion: { uz: "5 boʻlak", ko: "5조각", ru: "5 кусочков", en: "5 pieces" },
-    // No openly licensed photo of xonim exists yet: add your own (see photos.ts).
+    photo: photos.xonim,
     keywords: ["xonim", "khanum", "hanum", "khonim", "honim", "roll", "steamed", "말이"],
   },
   {

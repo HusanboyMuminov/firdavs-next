@@ -65,6 +65,7 @@ import tovuqKabob from "@/assets/menu/tovuq-kabob.jpg";
 import toyOshi from "@/assets/menu/toy-oshi.jpg";
 import tuzlanganBodring from "@/assets/menu/tuzlangan-bodring.jpg";
 import uygurLagmon from "@/assets/menu/uygur-lagmon.jpg";
+import xonim from "@/assets/menu/xonim.jpg";
 import xurmoFresh from "@/assets/menu/xurmo-fresh.jpg";
 import yangiSalat from "@/assets/menu/yangi-salat.jpg";
 
@@ -177,7 +178,6 @@ export const photos = {
   },
   ilikShorva: {
     src: ilikShorva,
-    credit: { author: "Benreis", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Kelle_pa%C3%A7a_Hof.jpg" },
   },
   jiz: {
     src: jiz,
@@ -279,7 +279,6 @@ export const photos = {
   },
   qovurdoq: {
     src: qovurdoq,
-    credit: { author: "MarianaSenkiv", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Kazan-kebab_in_Drohobych,_Ukraine_01.jpg" },
   },
   qovurmaLagmon: {
     src: qovurmaLagmon,
@@ -348,6 +347,10 @@ export const photos = {
   uygurLagmon: {
     src: uygurLagmon,
     credit: { author: "К.Артём.1", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Laghman,_Novosibirsk_01.jpg" },
+  },
+  // The restaurant's own photos (no credit needed): xonim, ilikShorva, qovurdoq.
+  xonim: {
+    src: xonim,
   },
   xurmoFresh: {
     src: xurmoFresh,
