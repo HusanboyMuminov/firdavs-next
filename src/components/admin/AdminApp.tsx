@@ -5,9 +5,11 @@ import { categories, dishById } from "@/data/menu";
 import { restaurant } from "@/data/restaurant";
 import { LOCALE_COOKIE, isLocale, localeLabels, localeNames, locales, type Locale } from "@/i18n/config";
 import { ui, type UI } from "@/i18n/ui";
+import { formatPrice } from "@/lib/format";
 import { formatAgo } from "@/lib/intl";
+import { ADMIN_PUSH, disablePush, enablePush, readPushStatus, updatePushLanguage, type PushStatus } from "@/lib/push-client";
 import type { Stats } from "@/server/analytics";
-import { ActivityIcon, ArrowIcon, BellIcon, LogoutIcon, MessageIcon, SendIcon } from "../icons";
+import { ActivityIcon, ArrowIcon, BagIcon, BellIcon, LogoutIcon, MessageIcon, SendIcon } from "../icons";
 import { LanguagePicker } from "../LanguageSwitcher";
 import { StarMark } from "../Ornament";
 import { DailyChart, RankedBars } from "./AdminCharts";
@@ -305,7 +307,11 @@ function Dashboard({ stats, lang, t, live, failed }: { stats: AdminStats; lang: 
         ))}
       </ul>
 
+      <OrdersPanel t={t} lang={lang} live={live} now={stats.generatedAt} />
+
       <MessagesPanel t={t} lang={lang} live={live} now={stats.generatedAt} />
+
+      <AlertsCard t={t} lang={lang} />
 
       <Card title={t.admin.daily} wide>
         <DailyChart days={stats.daily} lang={lang} t={t} />
@@ -571,6 +577,175 @@ function MessagesPanel({ t, lang, live, now }: { t: UI; lang: Locale; live: bool
             </p>
           )}
         </div>
+      )}
+    </section>
+  );
+}
+
+type AdminOrder = {
+  id: number;
+  table: string;
+  lines: { id: string; name: string; qty: number; unit: number | null; label: string | null }[];
+  total: number;
+  unpriced: number;
+  createdAt: number;
+  smsStatus: "sent" | "failed" | "not_configured" | "pending";
+};
+type OrdersData = { orders: AdminOrder[]; sms: { provider: "solapi" | "twilio" | null; to: string } };
+
+const PROVIDER_NAME = { solapi: "Solapi", twilio: "Twilio" } as const;
+
+/** Latest table orders (stored on the server) and whether the kitchen SMS is set up. */
+function OrdersPanel({ t, lang, live, now }: { t: UI; lang: Locale; live: boolean; now: number }) {
+  const [data, setData] = useState<OrdersData | null>(null);
+
+  useEffect(() => {
+    if (!live) return;
+    let cancelled = false;
+    const load = () =>
+      getJson<OrdersData>("/api/admin/orders")
+        .then((next) => {
+          if (!cancelled) setData(next);
+        })
+        .catch(() => {});
+    load();
+    const timer = setInterval(load, POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [live]);
+
+  const status = (s: AdminOrder["smsStatus"]) =>
+    s === "sent" ? t.admin.orders.sent : s === "failed" ? t.admin.orders.failed : s === "pending" ? t.admin.orders.pending : t.admin.orders.notConfigured;
+
+  return (
+    <section className={`${styles.card} ${styles.wide}`} aria-labelledby="admin-orders">
+      <h2 id="admin-orders" className={styles.cardTitle}>
+        <BagIcon size={19} />
+        {t.admin.orders.title}
+      </h2>
+      {data &&
+        (data.sms.provider ? (
+          <p className={styles.muted}>{t.admin.orders.smsOn(PROVIDER_NAME[data.sms.provider], data.sms.to)}</p>
+        ) : (
+          <p className={styles.warn}>{t.admin.orders.smsMissing}</p>
+        ))}
+      {data === null ? (
+        <div className={styles.loadingSmall} aria-busy="true" />
+      ) : data.orders.length === 0 ? (
+        <p className={styles.muted}>{t.admin.orders.empty}</p>
+      ) : (
+        <ul className={styles.orderList}>
+          {data.orders.map((o) => (
+            <li key={o.id} className={styles.orderRow}>
+              <div className={styles.orderTop}>
+                <span className={styles.orderId}>#{o.id}</span>
+                <span className={styles.threadName}>{t.admin.orders.table(o.table)}</span>
+                <span className={styles.threadTime}>{formatAgo(Math.max(0, now - o.createdAt), lang)}</span>
+                <span className={styles.smsChip} data-status={o.smsStatus}>
+                  {status(o.smsStatus)}
+                </span>
+              </div>
+              <ul className={styles.orderLines}>
+                {o.lines.map((l) => (
+                  <li key={l.id}>
+                    <span lang="uz">
+                      {l.name} × {l.qty}
+                    </span>
+                    <span>{l.unit !== null ? formatPrice(l.unit * l.qty) : (l.label ?? t.admin.orders.byStaff)}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className={styles.orderTotal}>
+                {o.unpriced === o.lines.length ? t.cart.totalByStaff : formatPrice(o.total)}
+                {o.unpriced > 0 && o.unpriced < o.lines.length ? " +" : ""}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/** Push alerts on the admin's own device (new guests, orders, messages). */
+function AlertsCard({ t, lang }: { t: UI; lang: Locale }) {
+  const [push, setPush] = useState<{ status: PushStatus | "loading"; key: string | null }>({ status: "loading", key: null });
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    readPushStatus(ADMIN_PUSH)
+      .then((result) => {
+        if (!cancelled) setPush(result);
+      })
+      .catch(() => {
+        if (!cancelled) setPush({ status: "unavailable", key: null });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const on = push.status === "on";
+  useEffect(() => {
+    if (on) updatePushLanguage(lang, ADMIN_PUSH).catch(() => {});
+  }, [on, lang]);
+
+  const toggle = async () => {
+    if (busy || !push.key) return;
+    setBusy(true);
+    setFailed(false);
+    try {
+      const status = on ? await disablePush(ADMIN_PUSH) : await enablePush(push.key, lang, ADMIN_PUSH);
+      setPush((p) => ({ ...p, status }));
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const a = t.admin.alerts;
+  const note =
+    push.status === "unsupported"
+      ? a.unsupported
+      : push.status === "install"
+        ? a.install
+        : push.status === "denied"
+          ? a.denied
+          : push.status === "unavailable"
+            ? a.unavailable
+            : null;
+  const canToggle = push.status === "on" || push.status === "off" || push.status === "loading";
+
+  return (
+    <section className={`${styles.card} ${styles.wide}`} aria-labelledby="admin-alerts">
+      <h2 id="admin-alerts" className={styles.cardTitle}>
+        <BellIcon size={19} />
+        {a.title}
+      </h2>
+      <p className={styles.muted}>{a.about}</p>
+      {on && <p className={styles.formOk}>{a.on}</p>}
+      {note && <p className={styles.warn}>{note}</p>}
+      {canToggle && (
+        <button
+          type="button"
+          className={on ? styles.secondaryBtn : styles.primaryBtn}
+          onClick={toggle}
+          disabled={busy || push.status === "loading"}
+          aria-busy={busy || undefined}
+        >
+          <BellIcon size={18} />
+          {busy || push.status === "loading" ? a.working : on ? a.disable : a.enable}
+        </button>
+      )}
+      {failed && (
+        <p className={styles.formError} role="alert">
+          {a.error}
+        </p>
       )}
     </section>
   );

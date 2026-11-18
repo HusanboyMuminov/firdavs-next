@@ -54,35 +54,65 @@ export function saveSubscription(sub: PushSubscriptionInput, lang: Locale): void
 }
 
 export function removeSubscription(endpoint: string): void {
-  getDb().prepare(`DELETE FROM push_subscriptions WHERE endpoint = ?`).run(endpoint);
+  const db = getDb();
+  db.prepare(`DELETE FROM push_subscriptions WHERE endpoint = ?`).run(endpoint);
+  db.prepare(`DELETE FROM chat_push WHERE endpoint = ?`).run(endpoint);
 }
 
-export type PushMessage = { title: string; body: string; url: string; lang: Locale | null };
+/* ── Admin devices (alerts about new guests, orders and messages) ───────── */
 
-/** Sends to everyone who opted in (optionally one language). Expired subscriptions are removed. */
-export async function sendToSubscribers(message: PushMessage) {
+export function saveAdminSubscription(sub: PushSubscriptionInput, lang: Locale): void {
+  getDb()
+    .prepare(
+      `INSERT INTO admin_push_subscriptions (endpoint, p256dh, auth, lang, created_at) VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(endpoint) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth, lang = excluded.lang`,
+    )
+    .run(sub.endpoint, sub.keys.p256dh, sub.keys.auth, lang, Date.now());
+}
+
+export function removeAdminSubscription(endpoint: string): void {
+  getDb().prepare(`DELETE FROM admin_push_subscriptions WHERE endpoint = ?`).run(endpoint);
+}
+
+export function adminSubscriberCount(): number {
+  return (getDb().prepare(`SELECT COUNT(*) AS n FROM admin_push_subscriptions`).get() as { n: number }).n;
+}
+
+/* ── Chat: a guest's subscription linked to their conversation ──────────── */
+
+/** Links an existing guest subscription to a chat thread; false if the endpoint isn't subscribed. */
+export function linkChatSubscription(thread: string, endpoint: string): boolean {
+  const db = getDb();
+  if (!db.prepare(`SELECT 1 FROM push_subscriptions WHERE endpoint = ?`).get(endpoint)) return false;
+  db.prepare(`INSERT OR IGNORE INTO chat_push (thread, endpoint) VALUES (?, ?)`).run(thread, endpoint);
+  return true;
+}
+
+/* ── Sending ───────────────────────────────────────────────────────────── */
+
+type Target = { endpoint: string; p256dh: string; auth: string };
+export type PushPayload = { title: string; body: string; url: string; tag?: string; renotify?: boolean };
+
+/**
+ * Sends one payload per target (in batches). Subscriptions the push service
+ * reports as gone (404/410) are removed with `forget`.
+ */
+export async function deliver(targets: { target: Target; payload: PushPayload }[], forget: (endpoint: string) => void) {
   const keys = vapid();
   if (!keys) throw new Error("Web Push is not configured");
   webpush.setVapidDetails(keys.subject, keys.publicKey, keys.privateKey);
-
-  const db = getDb();
-  const rows = (
-    message.lang
-      ? db.prepare(`SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE lang = ?`).all(message.lang)
-      : db.prepare(`SELECT endpoint, p256dh, auth FROM push_subscriptions`).all()
-  ) as { endpoint: string; p256dh: string; auth: string }[];
-
-  const payload = JSON.stringify({ title: message.title, body: message.body, url: message.url });
   let sent = 0;
   let failed = 0;
   let removed = 0;
-  for (let i = 0; i < rows.length; i += 25) {
-    const batch = rows.slice(i, i + 25);
+  for (let i = 0; i < targets.length; i += 25) {
+    const batch = targets.slice(i, i + 25);
     const results = await Promise.allSettled(
-      batch.map((row) =>
-        webpush.sendNotification({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, payload, {
-          TTL: 24 * 60 * 60,
-        }),
+      batch.map(({ target, payload }) =>
+        webpush.sendNotification(
+          { endpoint: target.endpoint, keys: { p256dh: target.p256dh, auth: target.auth } },
+          JSON.stringify(payload),
+          { TTL: 24 * 60 * 60 },
+        ),
       ),
     );
     results.forEach((result, j) => {
@@ -93,10 +123,29 @@ export async function sendToSubscribers(message: PushMessage) {
       failed += 1;
       const status = (result.reason as { statusCode?: number } | undefined)?.statusCode;
       if (status === 404 || status === 410) {
-        removeSubscription(batch[j].endpoint); // the browser unsubscribed or the subscription expired
+        forget(batch[j].target.endpoint); // the browser unsubscribed or the subscription expired
         removed += 1;
       }
     });
   }
-  return { total: rows.length, sent, failed, removed };
+  return { total: targets.length, sent, failed, removed };
 }
+
+export type PushMessage = { title: string; body: string; url: string; lang: Locale | null };
+
+/** Sends to every guest who opted in (optionally one language). */
+export async function sendToSubscribers(message: PushMessage) {
+  const db = getDb();
+  const rows = (
+    message.lang
+      ? db.prepare(`SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE lang = ?`).all(message.lang)
+      : db.prepare(`SELECT endpoint, p256dh, auth FROM push_subscriptions`).all()
+  ) as Target[];
+  const payload = { title: message.title, body: message.body, url: message.url };
+  return deliver(
+    rows.map((target) => ({ target, payload })),
+    removeSubscription,
+  );
+}
+
+export const pushReady = (): boolean => vapid() !== null;

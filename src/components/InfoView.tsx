@@ -5,7 +5,7 @@ import { dishes } from "@/data/menu";
 import type { PhotoCredit } from "@/data/photos";
 import { contactUrls, mapUrls, restaurant, type DayHours } from "@/data/restaurant";
 import type { Locale } from "@/i18n/config";
-import { fetchThread, sendChatMessage, type ChatMessage } from "@/lib/chat-client";
+import { fetchThread, linkChatPush, sendChatMessage, type ChatMessage } from "@/lib/chat-client";
 import { getOpenStatus, useNow } from "@/lib/hours";
 import {
   disablePush,
@@ -185,7 +185,29 @@ function ChatCard() {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [push, setPush] = useState<{ status: PushStatus | "loading"; key: string | null }>({ status: "loading", key: null });
+  const [pushBusy, setPushBusy] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // Opened via "Message us" (…/info#chat): bring the chat into view.
+  useEffect(() => {
+    if (window.location.hash === "#chat") cardRef.current?.scrollIntoView({ block: "start" });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    readPushStatus()
+      .then((result) => {
+        if (!cancelled) setPush(result);
+      })
+      .catch(() => {
+        if (!cancelled) setPush({ status: "unavailable", key: null });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Load the conversation, then check for replies while the page is visible.
   useEffect(() => {
@@ -201,7 +223,7 @@ function ChatCard() {
         });
     };
     load();
-    const timer = setInterval(load, 10_000);
+    const timer = setInterval(load, 5_000);
     return () => {
       cancelled = true;
       clearInterval(timer);
@@ -224,6 +246,7 @@ function ChatCard() {
     try {
       setMessages(await sendChatMessage(body, lang));
       setDraft("");
+      if (push.status === "on") linkChatPush(); // replies can alert this device
     } catch {
       setFailed(true);
     } finally {
@@ -231,7 +254,24 @@ function ChatCard() {
     }
   };
 
+  // Asked only after the guest has written (and only from a tap on the button).
+  const enableReplyAlerts = async () => {
+    if (pushBusy || !push.key) return;
+    setPushBusy(true);
+    try {
+      const status = await enablePush(push.key, lang);
+      setPush((p) => ({ ...p, status }));
+      if (status === "on") await linkChatPush();
+    } catch {
+      // stays off; the Notifications card explains blocked/unsupported states
+    } finally {
+      setPushBusy(false);
+    }
+  };
+  const wrote = messages?.some((m) => m.sender === "guest") ?? false;
+
   return (
+    <div id="chat" ref={cardRef} className={styles.anchor}>
     <Card icon={<MessageIcon size={19} />} title={t.chat.title}>
       <p className={styles.text}>{t.chat.subtitle}</p>
       <div className={styles.chatLog} ref={logRef} aria-live="polite">
@@ -276,8 +316,24 @@ function ChatCard() {
           {t.chat.error}
         </p>
       )}
+      {wrote && push.status === "off" && (
+        <div className={styles.chatNotify}>
+          <span>{t.chat.notifyPrompt}</span>
+          <button type="button" className={styles.chatNotifyBtn} onClick={enableReplyAlerts} disabled={pushBusy}>
+            <BellIcon size={16} />
+            {pushBusy ? t.notify.working : t.chat.notifyButton}
+          </button>
+        </div>
+      )}
+      {wrote && push.status === "on" && (
+        <p className={styles.notifyOn}>
+          <CheckIcon size={16} />
+          {t.chat.notifyOn}
+        </p>
+      )}
       <p className={styles.note}>{t.chat.privacy}</p>
     </Card>
+    </div>
   );
 }
 
@@ -320,6 +376,7 @@ function NotificationsCard() {
     try {
       const status = push.status === "on" ? await disablePush() : await enablePush(push.key, lang);
       setPush((p) => ({ ...p, status }));
+      if (status === "on") await linkChatPush(); // reply alerts for an existing conversation
     } catch {
       setFailed(true);
     } finally {

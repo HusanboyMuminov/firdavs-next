@@ -1,5 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { dishById, type Dish } from "@/data/menu";
+import { unitPrice } from "./format";
 
 /**
  * The guest's order basket, saved in this browser (localStorage) and shared
@@ -92,8 +93,9 @@ export function orderTotal(items: readonly CartItem[]): OrderTotal {
   let amount = 0;
   let unpriced = 0;
   for (const { dish, qty } of items) {
-    if (dish.price === null) unpriced += 1;
-    else amount += dish.price * qty;
+    const unit = unitPrice(dish); // null: not set yet, or depends on the size
+    if (unit === null) unpriced += 1;
+    else amount += unit * qty;
   }
   return { amount, unpriced };
 }

@@ -1,8 +1,9 @@
 import { unstable_rethrow } from "next/navigation";
-import { connection, type NextRequest } from "next/server";
+import { after, connection, type NextRequest } from "next/server";
 import { isAdminRequest } from "@/server/admin-auth";
 import { errorResponse, isSameOrigin, json, readJson } from "@/server/http";
 import { addMessage, adminThread, isThreadId, MAX_MESSAGE, threadLang } from "@/server/messages";
+import { notifyGuestReply } from "@/server/notify";
 import { isText } from "@/server/validate";
 
 type Ctx = { params: Promise<{ thread: string }> };
@@ -39,6 +40,7 @@ export async function POST(request: NextRequest, { params }: Ctx) {
     const lang = threadLang(thread);
     if (!lang) return errorResponse(404, "not_found");
     addMessage(thread, "admin", body, lang);
+    after(() => notifyGuestReply(thread, lang, body));
     return json({ messages: adminThread(thread) ?? [] }, 201);
   } catch (error) {
     console.error("[api/admin/messages/[thread] POST]", error);

@@ -229,6 +229,7 @@
   font-size: 23px;
   font-weight: 700;
   color: var(--ink);
+  font-variant-numeric: lining-nums; /* "Buyurtma #1", not an old-style "ı" */
 }
 
 .close {
@@ -572,4 +573,37 @@
   font-weight: 700;
   color: var(--burgundy);
   background: var(--burgundy-tint);
+}
+
+.linePrice strong {
+  font-weight: 800;
+}
+
+.resultTitle {
+  padding: 0 24px 6px;
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--ink);
+}
+
+.warnIcon {
+  color: var(--gold-ink);
+  background: #f8eedb;
+}
+
+.error {
+  margin: 12px 20px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #9b1c1c;
+  background: #fdecec;
+}
+
+.tableInput[aria-invalid="true"] {
+  border-color: #c2183b;
 }

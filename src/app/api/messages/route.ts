@@ -1,8 +1,9 @@
 import { unstable_rethrow } from "next/navigation";
-import { connection, type NextRequest } from "next/server";
+import { after, connection, type NextRequest } from "next/server";
 import { isLocale } from "@/i18n/config";
 import { clientIp, createRateLimiter, errorResponse, isSameOrigin, json, readJson } from "@/server/http";
 import { addMessage, guestThread, guestUnread, isChatKey, MAX_MESSAGE, threadOf } from "@/server/messages";
+import { notifyAdmins } from "@/server/notify";
 import { isText } from "@/server/validate";
 
 /**
@@ -48,6 +49,7 @@ export async function POST(request: NextRequest) {
   try {
     const thread = threadOf(key);
     addMessage(thread, "guest", body, lang);
+    after(() => notifyAdmins({ kind: "message", guest: thread.slice(0, 6).toUpperCase(), preview: body }));
     return json({ messages: guestThread(thread) }, 201);
   } catch (error) {
     console.error("[api/messages POST]", error);

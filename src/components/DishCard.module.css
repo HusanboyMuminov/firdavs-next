@@ -153,6 +153,10 @@
     color 0.12s ease;
 }
 
+.fav {
+  touch-action: manipulation; /* no double-tap zoom delay on phones */
+}
+
 .fav::before {
   /* 44px touch target */
   content: "";
@@ -164,8 +168,11 @@
   transform: scale(0.9);
 }
 
+/* Liked: a solid red badge with a white heart — clear at a glance. */
 .fav[data-active="true"] {
-  color: #c2183b;
+  color: #fff;
+  background: #c2183b;
+  box-shadow: 0 3px 10px -2px rgba(194, 24, 59, 0.55);
 }
 
 .cardFav {

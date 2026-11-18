@@ -5,8 +5,8 @@ import path from "node:path";
 
 /**
  * SQLite database (file path from DATABASE_PATH). Stores anonymous usage
- * analytics, admin sessions, push subscriptions and guests' private messages
- * to the restaurant — no names, phone numbers or IP addresses.
+ * analytics, admin sessions, push subscriptions, guests' private messages and
+ * table orders — no names, phone numbers or IP addresses.
  * Needs a persistent disk (any Node.js host / Docker volume).
  */
 
@@ -67,6 +67,37 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 );
 CREATE INDEX IF NOT EXISTS chat_messages_thread ON chat_messages(thread, id);
 CREATE INDEX IF NOT EXISTS chat_messages_created ON chat_messages(created_at);
+
+-- Table orders. request_id (one per Confirm) makes a repeated press return the same order.
+CREATE TABLE IF NOT EXISTS orders (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  request_id TEXT NOT NULL UNIQUE,
+  table_no   TEXT NOT NULL,
+  lines      TEXT NOT NULL,
+  total      INTEGER NOT NULL,
+  unpriced   INTEGER NOT NULL,
+  lang       TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  sms_status TEXT NOT NULL,
+  sms_error  TEXT
+);
+CREATE INDEX IF NOT EXISTS orders_created ON orders(created_at);
+
+-- The admin's devices that get alerts (new guests, orders, messages).
+CREATE TABLE IF NOT EXISTS admin_push_subscriptions (
+  endpoint   TEXT PRIMARY KEY,
+  p256dh     TEXT NOT NULL,
+  auth       TEXT NOT NULL,
+  lang       TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
+-- A guest's push subscription linked to their chat thread (reply alerts).
+CREATE TABLE IF NOT EXISTS chat_push (
+  thread   TEXT NOT NULL,
+  endpoint TEXT NOT NULL,
+  PRIMARY KEY (thread, endpoint)
+);
 `;
 
 type GlobalWithDb = typeof globalThis & { __firdavsDb?: Database.Database };

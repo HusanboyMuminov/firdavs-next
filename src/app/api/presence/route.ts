@@ -1,8 +1,9 @@
-import type { NextRequest } from "next/server";
+import { after, type NextRequest } from "next/server";
 import { dishById } from "@/data/menu";
 import { isLocale } from "@/i18n/config";
 import { recordHeartbeat } from "@/server/analytics";
 import { clientIp, createRateLimiter, errorResponse, isSameOrigin, noContent, readJson } from "@/server/http";
+import { newGuestsToday, notifyAdmins } from "@/server/notify";
 import { isClientId, isScreenPath } from "@/server/validate";
 
 // Per IP address. Guests on the restaurant Wi-Fi share one public IP: a tab sends
@@ -33,7 +34,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    recordHeartbeat({ sid, visitor, path, lang, dish, view });
+    const { newVisitor } = recordHeartbeat({ sid, visitor, path, lang, dish, view });
+    // First visit of a device: alert the admin (once per device id).
+    if (newVisitor) after(() => notifyAdmins({ kind: "guest", guestLang: lang, today: newGuestsToday() }));
   } catch (error) {
     console.error("[api/presence]", error);
     return errorResponse(503, "unavailable");

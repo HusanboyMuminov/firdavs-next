@@ -18,9 +18,11 @@ export type Heartbeat = {
   view: boolean;
 };
 
-export function recordHeartbeat(h: Heartbeat): void {
+/** Records a heartbeat; `newVisitor` is true the very first time a device id is seen. */
+export function recordHeartbeat(h: Heartbeat): { newVisitor: boolean } {
   const db = getDb();
   const now = Date.now();
+  let newVisitor = false;
   db.transaction(() => {
     db.prepare(
       `INSERT INTO presence (sid, visitor, last_seen, path, lang) VALUES (?, ?, ?, ?, ?)
@@ -34,6 +36,7 @@ export function recordHeartbeat(h: Heartbeat): void {
     if (visit) {
       db.prepare(`UPDATE visits SET last_seen = ?, pageviews = pageviews + ? WHERE id = ?`).run(now, h.view ? 1 : 0, visit.id);
     } else {
+      newVisitor = !db.prepare(`SELECT 1 FROM visits WHERE visitor = ? LIMIT 1`).get(h.visitor);
       db.prepare(
         `INSERT INTO visits (visitor, started_at, last_seen, lang, entry_path, pageviews) VALUES (?, ?, ?, ?, ?, ?)`,
       ).run(h.visitor, now, now, h.lang, h.path, h.view ? 1 : 0);
@@ -45,6 +48,7 @@ export function recordHeartbeat(h: Heartbeat): void {
     // Inactive tabs drop out automatically.
     db.prepare(`DELETE FROM presence WHERE last_seen < ?`).run(now - ACTIVE_TIMEOUT_MS);
   })();
+  return { newVisitor };
 }
 
 export function removePresence(sid: string): void {

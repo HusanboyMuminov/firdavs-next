@@ -717,3 +717,100 @@
 .replySend:disabled {
   opacity: 0.5;
 }
+
+/* ── Orders ──────────────────────────────────────────────────────────── */
+.warn {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #7a4b05;
+  background: #fbf0d9;
+}
+
+.orderList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.orderRow {
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--ivory);
+}
+
+.orderTop {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
+.orderId {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--burgundy);
+  font-variant-numeric: tabular-nums;
+}
+
+.smsChip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #7a4b05;
+  background: #fbf0d9;
+}
+
+.smsChip[data-status="sent"] {
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.smsChip[data-status="failed"] {
+  color: #9b1c1c;
+  background: #fdecec;
+}
+
+.orderLines {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 8px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.orderLines li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.orderTotal {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+  text-align: right;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.secondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 14px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--burgundy);
+  background: var(--burgundy-tint);
+}

@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from "react";
 import type { Locale } from "@/i18n/config";
+import { subscriptionEndpoint } from "./push-client";
 
 /**
  * Guest side of the private chat with the restaurant.
@@ -66,6 +67,26 @@ export async function sendChatMessage(body: string, lang: Locale): Promise<ChatM
       body: JSON.stringify({ body, lang }),
     }),
   );
+}
+
+/** True once this device has written to the restaurant (it has a conversation). */
+export function hasConversation(): boolean {
+  return readKey() !== null;
+}
+
+/**
+ * Links this device's notification subscription (if it has one) to the
+ * conversation, so the restaurant's replies can alert the guest.
+ */
+export async function linkChatPush(): Promise<void> {
+  const key = readKey();
+  const endpoint = key ? await subscriptionEndpoint().catch(() => null) : null;
+  if (!key || !endpoint) return;
+  await fetch("/api/messages/push", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Chat-Key": key },
+    body: JSON.stringify({ endpoint }),
+  }).catch(() => {});
 }
 
 /* ── Unread replies (badge on the Info tab) ─────────────────────────────── */

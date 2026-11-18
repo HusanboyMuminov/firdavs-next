@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
+  // Development only: lets a phone on the same Wi-Fi use the dev server
+  // (http://192.168.x.x:3000). Without this, Next.js blocks the page's scripts
+  // for non-localhost visitors, so nothing on the page responds to taps.
+  allowedDevOrigins: ["192.168.*.*", "10.*.*.*", "172.*.*.*", "*.local"],
   // A parent directory has its own package.json + lockfile, so pin the
   // project root instead of letting Next.js infer the wrong workspace.
   turbopack: {

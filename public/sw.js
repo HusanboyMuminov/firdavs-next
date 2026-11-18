@@ -18,6 +18,8 @@ self.addEventListener("push", (event) => {
       icon: "/icons/icon-192.png",
       badge: "/icons/badge-96.png",
       data: { url: typeof data.url === "string" ? data.url : "/" },
+      // A tag replaces the previous alert of the same kind instead of stacking up.
+      ...(typeof data.tag === "string" ? { tag: data.tag, renotify: data.renotify === true } : {}),
     }),
   );
 });

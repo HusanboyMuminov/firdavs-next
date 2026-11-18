@@ -1,9 +1,17 @@
 import type { Locale } from "@/i18n/config";
 
 /**
- * Web Push in the browser. Permission is only ever requested from a tap on
- * the "Notifications" switch; nothing is subscribed without it.
+ * Web Push in the browser. Permission is only ever requested from a tap on a
+ * button; nothing is subscribed without it.
+ *
+ * Two independent channels: guests (scope "/") and the admin's alerts (scope
+ * "/admin-push/" — a separate service-worker registration, so turning one off
+ * never affects the other on a shared device).
  */
+
+export type PushChannel = { scope: string; endpoint: string };
+export const GUEST_PUSH: PushChannel = { scope: "/", endpoint: "/api/push/subscription" };
+export const ADMIN_PUSH: PushChannel = { scope: "/admin-push/", endpoint: "/api/admin/push/subscription" };
 
 export type PushStatus =
   | "unsupported" // browser has no Web Push
@@ -56,24 +64,53 @@ async function fetchKey(): Promise<string | null> {
   }
 }
 
-export async function readPushStatus(): Promise<{ status: PushStatus; key: string | null }> {
+/** Waits until a (new) registration has an active worker — needed before subscribing. */
+async function activated(registration: ServiceWorkerRegistration): Promise<void> {
+  if (registration.active) return;
+  const worker = registration.installing ?? registration.waiting;
+  if (!worker) return;
+  await new Promise<void>((resolve) => {
+    const check = () => {
+      if (worker.state === "activated") resolve();
+    };
+    worker.addEventListener("statechange", check);
+    check();
+  });
+}
+
+async function currentSubscription(channel: PushChannel): Promise<PushSubscription | null> {
+  if (!supported()) return null;
+  const registration = await navigator.serviceWorker.getRegistration(channel.scope);
+  // getRegistration(scope) also matches a parent scope: only use an exact match.
+  if (!registration || new URL(registration.scope).pathname !== channel.scope) return null;
+  return (await registration.pushManager.getSubscription()) ?? null;
+}
+
+/** This device's subscription endpoint for a channel (null if not subscribed). */
+export async function subscriptionEndpoint(channel: PushChannel = GUEST_PUSH): Promise<string | null> {
+  if (!supported() || Notification.permission !== "granted") return null;
+  return (await currentSubscription(channel))?.endpoint ?? null;
+}
+
+export async function readPushStatus(
+  channel: PushChannel = GUEST_PUSH,
+): Promise<{ status: PushStatus; key: string | null }> {
   if (!supported()) return { status: isAppleMobile() && !isStandalone() ? "install" : "unsupported", key: null };
   const key = await fetchKey();
   if (!key) return { status: "unavailable", key: null };
   if (Notification.permission === "denied") return { status: "denied", key };
-  const registration = await navigator.serviceWorker.getRegistration("/");
-  const subscription = await registration?.pushManager.getSubscription();
+  const subscription = await currentSubscription(channel);
   const on = subscription && Notification.permission === "granted" && sameKey(subscription, key);
   return { status: on ? "on" : "off", key };
 }
 
 /** Must be called from a click: it asks for permission first. */
-export async function enablePush(key: string, lang: Locale): Promise<PushStatus> {
+export async function enablePush(key: string, lang: Locale, channel: PushChannel = GUEST_PUSH): Promise<PushStatus> {
   const permission = await Notification.requestPermission();
   if (permission !== "granted") return permission === "denied" ? "denied" : "off";
 
-  const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-  await navigator.serviceWorker.ready;
+  const registration = await navigator.serviceWorker.register("/sw.js", { scope: channel.scope });
+  await activated(registration);
   let subscription = await registration.pushManager.getSubscription();
   if (subscription && !sameKey(subscription, key)) {
     await subscription.unsubscribe(); // server keys were rotated
@@ -84,7 +121,7 @@ export async function enablePush(key: string, lang: Locale): Promise<PushStatus>
     applicationServerKey: keyToBytes(key),
   });
 
-  const response = await fetch("/api/push/subscription", {
+  const response = await fetch(channel.endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ subscription: subscription.toJSON(), lang }),
@@ -97,23 +134,21 @@ export async function enablePush(key: string, lang: Locale): Promise<PushStatus>
 }
 
 /** Keeps the server's copy of this device's language current (notifications can target a language). */
-export async function updatePushLanguage(lang: Locale): Promise<void> {
+export async function updatePushLanguage(lang: Locale, channel: PushChannel = GUEST_PUSH): Promise<void> {
   if (!supported() || Notification.permission !== "granted") return;
-  const registration = await navigator.serviceWorker.getRegistration("/");
-  const subscription = await registration?.pushManager.getSubscription();
+  const subscription = await currentSubscription(channel);
   if (!subscription) return;
-  await fetch("/api/push/subscription", {
+  await fetch(channel.endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ subscription: subscription.toJSON(), lang }),
   });
 }
 
-export async function disablePush(): Promise<PushStatus> {
-  const registration = await navigator.serviceWorker.getRegistration("/");
-  const subscription = await registration?.pushManager.getSubscription();
+export async function disablePush(channel: PushChannel = GUEST_PUSH): Promise<PushStatus> {
+  const subscription = await currentSubscription(channel);
   if (subscription) {
-    await fetch("/api/push/subscription", {
+    await fetch(channel.endpoint, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ endpoint: subscription.endpoint }),

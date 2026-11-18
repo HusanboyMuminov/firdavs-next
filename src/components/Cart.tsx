@@ -3,43 +3,31 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { restaurant } from "@/data/restaurant";
 import { orderTotal, useCart, type CartItem } from "@/lib/cart";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, priceLabel, unitPrice } from "@/lib/format";
 import { useApp } from "./AppContext";
 import { BagIcon, CheckIcon, CloseIcon, CopyIcon, MessageIcon, MinusIcon, PlusIcon, TrashIcon } from "./icons";
 import styles from "./Cart.module.css";
 
 /**
- * Ordering: dishes go into the cart → "Order" → table number → "Confirm" opens
- * the guest's own SMS app with the order written out, addressed to the
- * restaurant. A web page cannot send an SMS by itself: the guest reviews the
- * message and presses Send in their SMS app.
+ * Ordering: dishes go into the cart → "Order" → table number → "Confirm".
+ * The order is saved on the server and sent to the kitchen phone by SMS (via
+ * the SMS provider configured on the server). If that SMS can't go out, the
+ * guest is told so and can send the same text from their own phone.
  */
 
-type Phase = "cart" | "table" | "sent";
+type Phase = "cart" | "table" | "done";
+type Result = {
+  order: { id: number; table: string; total: number; unpriced: number; createdAt: number };
+  sms: "sent" | "failed" | "not_configured" | "pending";
+  text: string;
+};
 
-/**
- * The SMS the restaurant receives. Fixed format for the staff (Uzbek dish
- * names, whatever language the guest uses).
- */
-export function orderMessage(items: readonly CartItem[], table: string): string {
-  const { amount, unpriced } = orderTotal(items);
-  const total =
-    unpriced === 0
-      ? formatPrice(amount)
-      : amount > 0
-        ? `${formatPrice(amount)} + items without a price`
-        : "to be confirmed by staff";
-  return [
-    "FIRDAVS order",
-    `Table: ${table}`,
-    "",
-    ...items.map(({ dish, qty }, i) => {
-      const price = dish.price === null ? "" : ` — ${formatPrice(dish.price * qty)}`;
-      return `${i + 1}. ${dish.name.uz} × ${qty}${price}`;
-    }),
-    "",
-    `Total: ${total}`,
-  ].join("\n");
+const TABLE_RE = /^[1-9]\d{0,2}$/;
+
+function newRequestId(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 /** sms: link with the text filled in (iOS expects "&body=", everyone else "?body="). */
@@ -81,22 +69,40 @@ function TotalRow({ items }: { items: readonly CartItem[] }) {
   );
 }
 
+/** "₩12,000 × 2 = ₩24,000", "₩2,500 / ₩3,500" (size-dependent) or nothing (no price yet). */
+function LinePrice({ item }: { item: CartItem }) {
+  const unit = unitPrice(item.dish);
+  if (unit !== null) {
+    return (
+      <span className={styles.linePrice}>
+        {formatPrice(unit)} × {item.qty} = <strong>{formatPrice(unit * item.qty)}</strong>
+      </span>
+    );
+  }
+  const label = priceLabel(item.dish);
+  return label ? <span className={styles.linePrice}>{label}</span> : null;
+}
+
 export function CartSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t, lang } = useApp();
   const { items, changeQty, clear } = useCart();
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const confirmRef = useRef<HTMLAnchorElement>(null);
   const [phase, setPhase] = useState<Phase>("cart");
   const [table, setTable] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<Result | null>(null);
   const [copied, setCopied] = useState(false);
+  const sending = useRef(false); // blocks a second Confirm while one is on its way
+  const requestId = useRef<string | null>(null); // one per order: a retried Confirm can't order twice
 
   // Start over at the item list every time the sheet opens (adjusted during render).
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
     setWasOpen(open);
-    if (open) {
+    if (open && phase !== "done") {
       setPhase("cart");
-      setCopied(false);
+      setError(null);
     }
   }
   if (items.length === 0 && phase === "table") setPhase("cart");
@@ -126,24 +132,58 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
   }, [onClose]);
 
   const tableNo = table.trim();
-  const message = orderMessage(items, tableNo);
 
   const toTable = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    requestId.current = newRequestId(); // a new order (the cart may have changed)
+    setError(null);
     setPhase("table");
   };
 
-  // The link itself opens the SMS app; a moment later the sheet shows what to do next.
-  const sentTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  useEffect(() => () => clearTimeout(sentTimer.current), []);
-  const confirm = () => {
-    clearTimeout(sentTimer.current);
-    sentTimer.current = setTimeout(() => setPhase("sent"), 300);
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (sending.current) return;
+    if (!TABLE_RE.test(tableNo)) {
+      setError(t.cart.tableInvalid);
+      return;
+    }
+    sending.current = true;
+    setBusy(true);
+    setError(null);
+    requestId.current ??= newRequestId();
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestId: requestId.current,
+          table: tableNo,
+          lang,
+          items: items.map(({ dish, qty }) => ({ id: dish.id, qty })),
+        }),
+      });
+      if (!response.ok) {
+        const code = ((await response.json().catch(() => ({}))) as { error?: string }).error;
+        setError(code === "invalid_table" ? t.cart.tableUnknown : code === "rate_limited" ? t.cart.tooMany : t.cart.failed);
+        return;
+      }
+      const data = (await response.json()) as Result;
+      setResult(data);
+      setCopied(false);
+      setPhase("done");
+      if (data.sms === "sent") clear(); // delivered: the cart is done
+    } catch {
+      setError(t.cart.offline);
+    } finally {
+      sending.current = false;
+      setBusy(false);
+    }
   };
 
-  const copyMessage = async () => {
+  const copyText = async () => {
+    if (!result) return;
     try {
-      await navigator.clipboard.writeText(message);
+      await navigator.clipboard.writeText(result.text);
       setCopied(true);
     } catch {
       // Clipboard blocked — the text stays visible and selectable.
@@ -153,10 +193,18 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
   const finish = () => {
     clear();
     setTable("");
+    setResult(null);
+    requestId.current = null;
+    setPhase("cart");
     onClose();
   };
 
-  const title = phase === "table" ? t.cart.tableTitle : phase === "sent" ? t.cart.sentTitle : t.cart.title;
+  const title =
+    phase === "table"
+      ? t.cart.tableTitle
+      : phase === "done" && result
+        ? t.cart.orderNumber(result.order.id)
+        : t.cart.title;
 
   return (
     <dialog
@@ -177,29 +225,45 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
           </button>
         </header>
 
-        {phase === "sent" ? (
-          <div className={styles.flow}>
-            <div className={styles.sentIcon} aria-hidden="true">
-              <MessageIcon size={30} />
-            </div>
-            <p className={styles.sentHint}>{t.cart.sentHint}</p>
+        {phase === "done" && result ? (
+          <div className={styles.flow} role="status">
+            {result.sms === "sent" ? (
+              <>
+                <div className={styles.sentIcon} aria-hidden="true">
+                  <CheckIcon size={30} />
+                </div>
+                <p className={styles.resultTitle}>{t.cart.sentTitle}</p>
+                <p className={styles.sentHint}>{t.cart.sentHint(result.order.table)}</p>
+              </>
+            ) : (
+              <>
+                <div className={`${styles.sentIcon} ${styles.warnIcon}`} aria-hidden="true">
+                  <MessageIcon size={28} />
+                </div>
+                <p className={styles.resultTitle}>{t.cart.savedTitle}</p>
+                <p className={styles.sentHint}>{t.cart.savedHint(restaurant.phoneDisplay)}</p>
+              </>
+            )}
             <div className={styles.fallback}>
-              <p className={styles.fallbackLabel}>{t.cart.fallback(restaurant.phoneDisplay)}</p>
-              <pre className={styles.message}>{message}</pre>
-              <button type="button" className={styles.copyBtn} onClick={copyMessage} aria-live="polite">
-                {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
-                {copied ? t.cart.copied : t.cart.copy}
-              </button>
+              <pre className={styles.message}>{result.text}</pre>
+              {result.sms !== "sent" && (
+                <button type="button" className={styles.copyBtn} onClick={copyText} aria-live="polite">
+                  {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
+                  {copied ? t.cart.copied : t.cart.copy}
+                </button>
+              )}
             </div>
             <div className={styles.footer}>
-              <button type="button" className={styles.primary} onClick={finish}>
-                <CheckIcon size={19} />
+              {result.sms !== "sent" && (
+                <a href={smsLink(result.text)} className={styles.primary}>
+                  <MessageIcon size={19} />
+                  {t.cart.sendSms}
+                </a>
+              )}
+              <button type="button" className={result.sms === "sent" ? styles.primary : styles.ghost} onClick={finish}>
+                <CheckIcon size={18} />
                 {t.cart.done}
               </button>
-              <a href={smsLink(message)} className={styles.ghost}>
-                <MessageIcon size={17} />
-                {t.cart.openAgain}
-              </a>
             </div>
           </div>
         ) : items.length === 0 ? (
@@ -211,36 +275,39 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
         ) : phase === "cart" ? (
           <form onSubmit={toTable}>
             <ul className={styles.lines}>
-              {items.map(({ dish, qty }) => (
-                <li key={dish.id} className={styles.line}>
-                  <div className={styles.lineText}>
-                    <span className={styles.lineName} lang="uz">
-                      {dish.name.uz}
-                    </span>
-                    {lang !== "uz" && (
-                      <span className={styles.lineAlt} lang={lang}>
-                        {dish.name[lang]}
+              {items.map((item) => {
+                const { dish, qty } = item;
+                return (
+                  <li key={dish.id} className={styles.line}>
+                    <div className={styles.lineText}>
+                      <span className={styles.lineName} lang="uz">
+                        {dish.name.uz}
                       </span>
-                    )}
-                    {dish.price !== null && <span className={styles.linePrice}>{formatPrice(dish.price * qty)}</span>}
-                  </div>
-                  <div className={styles.qty}>
-                    <button
-                      type="button"
-                      aria-label={qty === 1 ? t.cart.remove : t.cart.decrease}
-                      onClick={() => changeQty(dish.id, qty - 1)}
-                    >
-                      {qty === 1 ? <TrashIcon size={16} /> : <MinusIcon size={16} />}
-                    </button>
-                    <span className={styles.qtyValue} aria-live="polite">
-                      {qty}
-                    </span>
-                    <button type="button" aria-label={t.cart.increase} onClick={() => changeQty(dish.id, qty + 1)}>
-                      <PlusIcon size={16} />
-                    </button>
-                  </div>
-                </li>
-              ))}
+                      {lang !== "uz" && (
+                        <span className={styles.lineAlt} lang={lang}>
+                          {dish.name[lang]}
+                        </span>
+                      )}
+                      <LinePrice item={item} />
+                    </div>
+                    <div className={styles.qty}>
+                      <button
+                        type="button"
+                        aria-label={qty === 1 ? t.cart.remove : t.cart.decrease}
+                        onClick={() => changeQty(dish.id, qty - 1)}
+                      >
+                        {qty === 1 ? <TrashIcon size={16} /> : <MinusIcon size={16} />}
+                      </button>
+                      <span className={styles.qtyValue} aria-live="polite">
+                        {qty}
+                      </span>
+                      <button type="button" aria-label={t.cart.increase} onClick={() => changeQty(dish.id, qty + 1)}>
+                        <PlusIcon size={16} />
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
             <div className={styles.footer}>
               <TotalRow items={items} />
@@ -254,20 +321,16 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
             </div>
           </form>
         ) : (
-          <form
-            className={styles.flow}
-            onSubmit={(e) => {
-              // "Done"/Enter on the number pad = Confirm.
-              e.preventDefault();
-              confirmRef.current?.click();
-            }}
-          >
+          <form className={styles.flow} onSubmit={submit} noValidate>
             <label className={styles.tableField}>
               <span className={styles.flowHint}>{t.cart.tableHint}</span>
               <input
                 className={styles.tableInput}
                 value={table}
-                onChange={(e) => setTable(e.target.value.replace(/\D/g, "").slice(0, 3))}
+                onChange={(e) => {
+                  setTable(e.target.value.replace(/\D/g, "").slice(0, 3));
+                  setError(null);
+                }}
                 placeholder={t.cart.tablePlaceholder}
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -275,6 +338,7 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
                 enterKeyHint="send"
                 autoFocus
                 aria-label={t.cart.tableTitle}
+                aria-invalid={error === t.cart.tableInvalid || error === t.cart.tableUnknown || undefined}
               />
             </label>
             <div className={styles.review}>
@@ -288,20 +352,18 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
               </ul>
               <TotalRow items={items} />
             </div>
+            {error && (
+              <p className={styles.error} role="alert">
+                {error}
+              </p>
+            )}
             <div className={styles.footer}>
-              {tableNo ? (
-                <a ref={confirmRef} href={smsLink(message)} className={styles.primary} onClick={confirm}>
-                  <MessageIcon size={19} />
-                  {t.cart.confirm}
-                </a>
-              ) : (
-                <button type="button" className={styles.primary} disabled>
-                  <MessageIcon size={19} />
-                  {t.cart.confirm}
-                </button>
-              )}
+              <button type="submit" className={styles.primary} disabled={busy || !tableNo} aria-busy={busy || undefined}>
+                <CheckIcon size={19} />
+                {busy ? t.cart.sending : t.cart.confirm}
+              </button>
               <p className={styles.confirmNote}>{t.cart.confirmNote}</p>
-              <button type="button" className={styles.ghost} onClick={() => setPhase("cart")}>
+              <button type="button" className={styles.ghost} onClick={() => setPhase("cart")} disabled={busy}>
                 {t.cart.back}
               </button>
             </div>

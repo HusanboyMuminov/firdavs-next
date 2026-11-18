@@ -2,12 +2,12 @@
 
 import { categories, dishes, dishesByCategory, type Dish } from "@/data/menu";
 import { contactUrls, mapUrls, restaurant } from "@/data/restaurant";
-import { formatPrice } from "@/lib/format";
+import { priceLabel } from "@/lib/format";
 import { isPlainClick, useApp } from "./AppContext";
 import { AddToCartButton } from "./Cart";
 import { FavoriteButton, otherNames } from "./DishCard";
 import { DishImage } from "./DishImage";
-import { ArrowIcon, PhoneIcon, PinIcon, ScooterIcon } from "./icons";
+import { ArrowIcon, MessageIcon, PhoneIcon, PinIcon, ScooterIcon } from "./icons";
 import { OpenStatus } from "./OpenStatus";
 import { MenuFooter, SectionHeading } from "./Sections";
 import styles from "./HomeView.module.css";
@@ -119,7 +119,7 @@ function SignatureCard({ dish }: { dish: Dish }) {
         <p className={styles.sigAlt3} lang={third}>
           {dish.name[third]}
         </p>
-        {dish.price !== null && <p className={styles.sigPrice}>{formatPrice(dish.price)}</p>}
+        {dish.price !== null && <p className={styles.sigPrice}>{priceLabel(dish)}</p>}
       </div>
       <FavoriteButton dishId={dish.id} className={styles.sigFav} />
     </article>
@@ -156,6 +156,20 @@ function InfoTeaser() {
           {t.info.maps}
         </a>
       </div>
+      <a
+        href={`${href("info")}#chat`}
+        className={styles.chatBtn}
+        onClick={(e) => {
+          if (!isPlainClick(e)) return;
+          e.preventDefault();
+          goTo("info");
+          // The Info screen scrolls to the chat when the URL ends in #chat.
+          window.history.replaceState(window.history.state, "", `${window.location.pathname}#chat`);
+        }}
+      >
+        <MessageIcon size={18} />
+        {t.chat.title}
+      </a>
       <a
         href={href("info")}
         className={styles.teaserMore}

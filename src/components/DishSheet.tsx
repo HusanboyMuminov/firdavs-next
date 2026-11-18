@@ -9,7 +9,7 @@ import {
   type PointerEvent,
 } from "react";
 import type { Dish } from "@/data/menu";
-import { formatPrice } from "@/lib/format";
+import { priceLabel } from "@/lib/format";
 import { useApp } from "./AppContext";
 import { AddToCartButton } from "./Cart";
 import { iconTags, otherNames, popHeart, type IconTag } from "./DishCard";
@@ -170,7 +170,7 @@ function SheetContent({
               {dish.name[third]}
             </p>
           </div>
-          {dish.price !== null && <p className={styles.price}>{formatPrice(dish.price)}</p>}
+          {dish.price !== null && <p className={styles.price}>{priceLabel(dish)}</p>}
         </div>
 
         {(tags.length > 0 || dish.portion) && (
@@ -208,8 +208,8 @@ function SheetContent({
             aria-pressed={saved}
             aria-label={saved ? t.removeFavorite : t.addFavorite}
             onClick={(e) => {
-              popHeart(e.currentTarget, !saved);
               toggleFavorite(dish.id);
+              popHeart(e.currentTarget, !saved);
             }}
           >
             <HeartIcon size={22} filled={saved} />

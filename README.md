@@ -29,6 +29,10 @@ host's environment in production. `.env*` files are gitignored (only `.env.examp
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | notifications | Generate once: `npx web-push generate-vapid-keys`. Without them the Notifications card is hidden. |
 | `VAPID_SUBJECT` | notifications | `mailto:` address or `https://` URL push services can contact. |
 | `SITE_URL` | link previews | e.g. `https://menu.example.com` (not needed on Vercel). |
+| `SOLAPI_API_KEY`, `SOLAPI_API_SECRET` *or* `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` | kitchen SMS | One SMS provider. Solapi suits Korean numbers. |
+| `SMS_FROM` | kitchen SMS | Sender number registered with the provider (Korea requires pre-registration). |
+| `ORDER_SMS_TO` | kitchen SMS | Kitchen phone; default 010-3238-2555. |
+| `TABLE_COUNT` | orders | Optional: highest table number (default 999). |
 
 The private VAPID key and the admin password are only read on the server; the browser only ever
 gets the public VAPID key (`/api/push/key`).
@@ -65,33 +69,38 @@ name (4:3, at least 1200×900 looks best) and delete its `credit` in `photos.ts`
 them as AVIF/WebP in the size each screen needs, lazy-loads them, and a missing image file fails
 the build instead of shipping a broken image.
 
-## Ordering from the table (SMS)
+## Ordering from the table
 
-Guests tap **+** on any dish or drink (or "Add to cart" in its detail sheet), open the cart,
-press **Order**, enter their **table number** and press **Confirm**. That opens the phone's own
-SMS app with the order already written, addressed to `orderPhone` (010-3238-2555) — for example
-(made-up prices):
+Guests tap **+** on any dish or drink (or "Add to cart" in its detail sheet), adjust quantities in
+the cart (line subtotals and the total update instantly), press **Order**, enter their **table
+number** and press **Confirm**. The order is validated and saved on the server (prices always come
+from `menu.ts`, never from the browser; one order per Confirm, so double taps can't order twice),
+then sent to the kitchen phone by **SMS through the configured provider**:
 
 ```
-FIRDAVS order
-Table: 7
+FIRDAVS RESTAURANT
+Order #12 · Table 7
+2026-11-19 14:05 (KST)
 
-1. Manti × 2 — ₩24,000
-2. Choy × 1 — ₩3,000
+1. Manti × 2 — ₩12,000 = ₩24,000
+2. Choy × 1 — ₩1,000
 
-Total: ₩27,000
+Total: ₩25,000
 ```
 
-A web page can't send an SMS by itself: the guest reviews the message and presses Send. If their
-SMS app doesn't open (e.g. on a computer), the sheet shows the text with a Copy button and the
-number to send it to. The cart is saved on the phone and cleared when the guest taps "Done".
+The guest sees "Sent to the kitchen" **only after the provider accepted the SMS**. If no provider
+is configured (or it fails), they're told so honestly and can send the same text from their own
+phone with one tap (or show the screen to a waiter). Every order — with its SMS status — is listed
+under **Orders** in the admin dashboard. Items whose price depends on the size (Gazli ichimliklar
+₩2,500 / ₩3,500) or isn't set yet are marked "priced by staff" and kept out of the total.
 
 ## Messages from guests
 
-On the Info screen guests can write to the restaurant ("Message us"). Each phone gets a random
+On the Info screen (or "Message us" on Home) guests can write to the restaurant. Each phone gets a random
 secret key (kept in its browser); the server stores only a hash of it, so a conversation can be
 read only on that phone and by the admin — never by other guests. Replies appear in the guest's
-chat, and the Info tab shows a badge until they're read. No names or phone numbers are collected;
+chat (it refreshes every few seconds), the Info tab shows a badge until they're read, and after
+writing, guests can turn on a notification for replies. No names or phone numbers are collected;
 messages are deleted after 6 months.
 
 ## Admin dashboard — `/admin`
@@ -103,8 +112,11 @@ Sign in with `ADMIN_PASSWORD` (any language prefix works: `/ko/admin`, `/ru/admi
   45 s at the latest. The dashboard refreshes every 5 s while it's visible.
 - Visits (today / 7 days / all time), page views, a 14-day chart (with a table view), languages,
   most opened dishes and screens, and recent activity.
+- **Orders** — every table order with its items, total and whether the kitchen SMS went out.
 - **Guest messages** — every conversation (newest first, with its language and unread count);
   open one to read it and reply.
+- **Alerts on this device** — push notifications to the admin's phone/computer for a new guest's
+  first visit (once per device), every new order and every new message.
 - **Send a notification** to guests who turned notifications on — to everyone or one language,
   opening a chosen screen.
 
@@ -135,6 +147,12 @@ Every screen is a prerendered page, so any of these opens instantly:
 
 Without a language prefix, the guest gets the language they picked before, else their phone's
 language, else English (`src/proxy.ts`).
+
+## Testing on a phone
+
+`npm run dev` and open `http://<your computer's Wi-Fi IP>:3000` on the phone. `next.config.ts`
+allows private network addresses (`allowedDevOrigins`) — without that, Next.js blocks its
+development scripts for anything but `localhost` and the page doesn't respond to taps.
 
 ## Deploying
 

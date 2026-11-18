@@ -7,17 +7,22 @@ import assortiKabob from "@/assets/menu/assorti-kabob.jpg";
 import ayron from "@/assets/menu/ayron.jpg";
 import bFresh from "@/assets/menu/b-fresh.jpg";
 import beshbarmoq from "@/assets/menu/beshbarmoq.jpg";
-import bifshteksTabaka from "@/assets/menu/bifshteks-tabaka.jpg";
+import bifshteks from "@/assets/menu/bifshteks.jpg";
 import borjomi from "@/assets/menu/borjomi.jpg";
 import cheburek from "@/assets/menu/cheburek.jpg";
 import chortoq from "@/assets/menu/chortoq.jpg";
 import choy from "@/assets/menu/choy.jpg";
 import chuchvara from "@/assets/menu/chuchvara.jpg";
+import dena from "@/assets/menu/dena.jpg";
+import dinay from "@/assets/menu/dinay.jpg";
 import dolma from "@/assets/menu/dolma.jpg";
+import duxovkaNon from "@/assets/menu/duxovka-non.jpg";
 import duxovkaSomsaMol from "@/assets/menu/duxovka-somsa-mol.jpg";
 import duxovkaSomsaTovuq from "@/assets/menu/duxovka-somsa-tovuq.jpg";
+import dyushesBuratino from "@/assets/menu/dyushes-buratino.jpg";
 import flavis from "@/assets/menu/flavis.jpg";
 import gazliIchimlik from "@/assets/menu/gazli-ichimlik.jpg";
+import ilikShorva from "@/assets/menu/ilik-shorva.jpg";
 import jiz from "@/assets/menu/jiz.jpg";
 import kartoshkaFri from "@/assets/menu/kartoshka-fri.jpg";
 import kompot from "@/assets/menu/kompot.jpg";
@@ -44,16 +49,18 @@ import qatiqStakan from "@/assets/menu/qatiq-stakan.jpg";
 import qiymaShashlik from "@/assets/menu/qiyma-shashlik.jpg";
 import qovurdoq from "@/assets/menu/qovurdoq.jpg";
 import qovurmaLagmon from "@/assets/menu/qovurma-lagmon.jpg";
-import qoyOyoqShorva from "@/assets/menu/qoy-oyoq-shorva.jpg";
 import qozonKabob from "@/assets/menu/qozon-kabob.jpg";
 import qurtoba from "@/assets/menu/qurtoba.jpg";
 import salyonniyAssorti from "@/assets/menu/salyonniy-assorti.jpg";
 import shokoladliTort from "@/assets/menu/shokoladli-tort.jpg";
 import shorva from "@/assets/menu/shorva.jpg";
 import sutliChoy from "@/assets/menu/sutli-choy.jpg";
+import tabaka from "@/assets/menu/tabaka.jpg";
+import tandirKabob from "@/assets/menu/tandir-kabob.jpg";
 import tandirNon from "@/assets/menu/tandir-non.jpg";
 import tandirSomsaMol from "@/assets/menu/tandir-somsa-mol.jpg";
 import tandirSomsaTovuq from "@/assets/menu/tandir-somsa-tovuq.jpg";
+import tarxun from "@/assets/menu/tarxun.jpg";
 import tovuqKabob from "@/assets/menu/tovuq-kabob.jpg";
 import toyOshi from "@/assets/menu/toy-oshi.jpg";
 import tuzlanganBodring from "@/assets/menu/tuzlangan-bodring.jpg";
@@ -107,8 +114,8 @@ export const photos = {
     src: beshbarmoq,
     credit: { author: "NataAllice", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:%D0%91%D0%B5%D1%88%D0%B1%D0%B0%D1%80%D0%BC%D0%B0%D0%BA_-_%D0%BA%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D0%B5_%D0%B1%D0%BB%D1%8E%D0%B4%D0%BE.jpg" },
   },
-  bifshteksTabaka: {
-    src: bifshteksTabaka,
+  bifshteks: {
+    src: bifshteks,
     credit: { author: "Davidwbaker", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Steak_Frites_with_Bordelaise,_July_2020.jpg" },
   },
   borjomi: {
@@ -131,9 +138,21 @@ export const photos = {
     src: chuchvara,
     credit: { author: "Marica Massaro", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Tortellini_nel_brodo.jpg" },
   },
+  dena: {
+    src: dena,
+    credit: { author: "Emanuel Jöbstl und Martin Thoma", license: "CC0", source: "https://commons.wikimedia.org/wiki/File:EmiMa-067.jpg" },
+  },
+  dinay: {
+    src: dinay,
+    credit: { author: "Shixart1985", license: "CC BY 2.0", source: "https://commons.wikimedia.org/wiki/File:Person_pours_water_from_a_bottle_into_a_glass_in_a_kitchen.jpg" },
+  },
   dolma: {
     src: dolma,
-    credit: { author: "Irada", license: "CC BY 3.0", source: "https://commons.wikimedia.org/wiki/File:Azerbaijani_dolma_pepper_tomato.jpg" },
+    credit: { author: "Tess Mattew", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:2025.09.02_Stuffed_Peppers_Paprika_in_Belarus_by_Dina_Panayotis.jpg" },
+  },
+  duxovkaNon: {
+    src: duxovkaNon,
+    credit: { author: "Abdullaev", license: "Public domain", source: "https://commons.wikimedia.org/wiki/File:Pitir_nan.JPG" },
   },
   duxovkaSomsaMol: {
     src: duxovkaSomsaMol,
@@ -143,6 +162,10 @@ export const photos = {
     src: duxovkaSomsaTovuq,
     credit: { author: "Mizu basyo", license: "CC BY-SA 3.0", source: "https://commons.wikimedia.org/wiki/File:Uyghur_samsa.jpg" },
   },
+  dyushesBuratino: {
+    src: dyushesBuratino,
+    credit: { author: "Pannet", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:%D0%94%D1%8E%D1%88%D0%B5%D1%81.jpg" },
+  },
   flavis: {
     src: flavis,
     credit: { author: "Ubcule", license: "CC BY-SA 3.0", source: "https://commons.wikimedia.org/wiki/File:Raspberryade.jpg" },
@@ -150,6 +173,10 @@ export const photos = {
   gazliIchimlik: {
     src: gazliIchimlik,
     credit: { author: "pic_p_ter", license: "Public domain", source: "https://commons.wikimedia.org/wiki/File:Glass_cola.jpg" },
+  },
+  ilikShorva: {
+    src: ilikShorva,
+    credit: { author: "Benreis", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Kelle_pa%C3%A7a_Hof.jpg" },
   },
   jiz: {
     src: jiz,
@@ -185,7 +212,7 @@ export const photos = {
   },
   medovik: {
     src: medovik,
-    credit: { author: "Wotancito", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Pastel_ruso_de_miel.JPG" },
+    credit: { author: "Sweetlovers", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Medovnik_Honey_Cake.jpg" },
   },
   milliyLagmon: {
     src: milliyLagmon,
@@ -213,7 +240,7 @@ export const photos = {
   },
   nonYarimta: {
     src: nonYarimta,
-    credit: { author: "Sinchalak Musulmon", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Bread_in_Uzbek_kitchen.jpg" },
+    credit: { author: "Shuhrataxmedov", license: "CC BY-SA 3.0", source: "https://commons.wikimedia.org/wiki/File:Piece_of_%27Patir-non%27.jpg" },
   },
   oliviya: {
     src: oliviya,
@@ -249,15 +276,11 @@ export const photos = {
   },
   qovurdoq: {
     src: qovurdoq,
-    credit: { author: "E4024", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Kavurma_(close_up).jpg" },
+    credit: { author: "MarianaSenkiv", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Kazan-kebab_in_Drohobych,_Ukraine_01.jpg" },
   },
   qovurmaLagmon: {
     src: qovurmaLagmon,
     credit: { author: "Orderinchaos", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Dolan_Uyghur_handmade_noodles_Adelaide.jpg" },
-  },
-  qoyOyoqShorva: {
-    src: qoyOyoqShorva,
-    credit: { author: "Benreis", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Kelle_pa%C3%A7a_Hof.jpg" },
   },
   qozonKabob: {
     src: qozonKabob,
@@ -283,9 +306,17 @@ export const photos = {
     src: sutliChoy,
     credit: { author: "Gaurav Dhwaj Khadka", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Milk_Tea_3.jpg" },
   },
+  tabaka: {
+    src: tabaka,
+    credit: { author: "Pannet", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:%D0%A6%D1%8B%D0%BF%D0%BB%D0%B5%D0%BD%D0%BE%D0%BA_%D1%82%D0%B0%D0%B1%D0%B0%D0%BA%D0%B0.jpg" },
+  },
+  tandirKabob: {
+    src: tandirKabob,
+    credit: { author: "E4024", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Kuzu_tand%C4%B1r.jpg" },
+  },
   tandirNon: {
     src: tandirNon,
-    credit: { author: "Benjamin Goetzinger", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Uzbek_bread,_obi_non,_lepyoshka.jpg" },
+    credit: { author: "Nikolai Bulykin", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:%D0%A1%D0%B0%D0%BC%D0%B0%D1%80%D0%BA%D0%B0%D0%BD%D0%B4,_%D0%BB%D0%B5%D0%BF%D1%91%D1%88%D0%BA%D0%B0_%D0%B2_%D1%83%D0%BB%D0%B8%D1%87%D0%BD%D0%BE%D0%BC_%D0%BA%D0%B0%D1%84%D0%B5.jpg" },
   },
   tandirSomsaMol: {
     src: tandirSomsaMol,
@@ -294,6 +325,10 @@ export const photos = {
   tandirSomsaTovuq: {
     src: tandirSomsaTovuq,
     credit: { author: "Xkmvch", license: "CC0", source: "https://commons.wikimedia.org/wiki/File:Somsa_1.jpg" },
+  },
+  tarxun: {
+    src: tarxun,
+    credit: { author: "Pannet", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:%D0%A2%D0%B0%D1%80%D1%85%D1%83%D0%BD.jpg" },
   },
   tovuqKabob: {
     src: tovuqKabob,

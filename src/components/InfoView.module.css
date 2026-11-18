@@ -678,3 +678,40 @@
   font-weight: 600;
   color: var(--spicy);
 }
+
+/* "Message us" target: leave room under the sticky top bar. */
+.anchor {
+  scroll-margin-top: 72px;
+}
+
+.chatNotify {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: var(--burgundy-tint);
+}
+
+.chatNotifyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--on-dark);
+  background: var(--burgundy);
+}
+
+.chatNotifyBtn:disabled {
+  opacity: 0.6;
+}

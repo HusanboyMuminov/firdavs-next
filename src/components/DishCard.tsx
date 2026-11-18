@@ -2,7 +2,7 @@
 
 import type { Dish, Tag } from "@/data/menu";
 import type { Locale } from "@/i18n/config";
-import { formatPrice } from "@/lib/format";
+import { priceLabel } from "@/lib/format";
 import { isPlainClick, useApp } from "./AppContext";
 import { AddToCartButton } from "./Cart";
 import { DishImage } from "./DishImage";
@@ -19,19 +19,28 @@ export function otherNames(lang: Locale): [Locale, Locale] {
   return ["en", "ko"];
 }
 
-/** A short "pop" on the heart when a dish is added to favorites. */
+/**
+ * A short "pop" on the heart when a dish is added to favorites. Purely
+ * decorative: it never throws, so it can't stop the toggle (older browsers lack
+ * Element.animate).
+ */
 export function popHeart(button: HTMLElement, adding: boolean) {
-  const icon = button.querySelector("svg");
-  if (!adding || !icon || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  icon.animate(
-    [
-      { transform: "scale(1)" },
-      { transform: "scale(1.38)", offset: 0.35 },
-      { transform: "scale(0.9)", offset: 0.7 },
-      { transform: "scale(1)" },
-    ],
-    { duration: 420, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
-  );
+  try {
+    const icon = button.querySelector("svg");
+    if (!adding || !icon || typeof icon.animate !== "function") return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    icon.animate(
+      [
+        { transform: "scale(1)" },
+        { transform: "scale(1.38)", offset: 0.35 },
+        { transform: "scale(0.9)", offset: 0.7 },
+        { transform: "scale(1)" },
+      ],
+      { duration: 420, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+    );
+  } catch {
+    // animation is optional
+  }
 }
 
 /** Tags shown to guests (`featured` only picks the Home carousel). */
@@ -73,10 +82,11 @@ export function FavoriteButton({ dishId, className }: { dishId: string; classNam
       type="button"
       className={`${styles.fav} ${className ?? ""}`}
       data-active={active}
+      aria-pressed={active}
       aria-label={active ? t.removeFavorite : t.addFavorite}
       onClick={(e) => {
+        toggleFavorite(dishId); // state first: the animation is optional
         popHeart(e.currentTarget, !active);
-        toggleFavorite(dishId);
       }}
     >
       <HeartIcon filled={active} size={18} />
@@ -115,7 +125,7 @@ export function DishCard({ dish, eager = false }: { dish: Dish; eager?: boolean 
         <p className={styles.ingredients}>{dish.ingredients[lang]}</p>
         {hasMeta && (
           <div className={styles.meta}>
-            {dish.price !== null && <span className={styles.price}>{formatPrice(dish.price)}</span>}
+            {dish.price !== null && <span className={styles.price}>{priceLabel(dish)}</span>}
             {dish.portion && <span className={styles.portion}>{dish.portion[lang]}</span>}
             <TagIcons tags={tags} />
           </div>
