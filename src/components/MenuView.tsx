@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { categories, dishes } from "@/data/menu";
+import { categories, dishesByCategory } from "@/data/menu";
 import type { CategoryFilter } from "@/lib/routes";
 import { searchDishes } from "@/lib/search";
 import { isPlainClick, useApp } from "./AppContext";
@@ -117,7 +117,7 @@ export function MenuView({
 
   const groups = categories
     .filter((c) => category === "all" || c.id === category)
-    .map((c) => ({ category: c, items: dishes.filter((d) => d.category === c.id) }));
+    .map((c) => ({ category: c, items: dishesByCategory.get(c.id) ?? [] }));
 
   return (
     <div className={styles.menu}>

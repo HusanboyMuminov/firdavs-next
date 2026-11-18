@@ -1,9 +1,10 @@
 "use client";
 
-import { categories, dishes, type Dish } from "@/data/menu";
+import { categories, dishes, dishesByCategory, type Dish } from "@/data/menu";
 import { contactUrls, mapUrls, restaurant } from "@/data/restaurant";
 import { formatPrice } from "@/lib/format";
 import { isPlainClick, useApp } from "./AppContext";
+import { AddToCartButton } from "./Cart";
 import { FavoriteButton, otherNames } from "./DishCard";
 import { DishImage } from "./DishImage";
 import { ArrowIcon, PhoneIcon, PinIcon, ScooterIcon } from "./icons";
@@ -12,9 +13,6 @@ import { MenuFooter, SectionHeading } from "./Sections";
 import styles from "./HomeView.module.css";
 
 const featuredDishes = dishes.filter((d) => d.tags?.includes("featured"));
-const countByCategory = new Map(
-  categories.map((c) => [c.id, dishes.filter((d) => d.category === c.id).length]),
-);
 
 export function HomeView() {
   const { t, lang, href, goTo } = useApp();
@@ -41,32 +39,35 @@ export function HomeView() {
           }
         />
         <ul className={styles.tiles}>
-          {categories.map((c, i) => (
-            <li key={c.id}>
-              <a
-                href={href("menu", c.id)}
-                className={styles.tile}
-                onClick={(e) => {
-                  if (!isPlainClick(e)) return;
-                  e.preventDefault();
-                  goTo("menu", c.id);
-                }}
-              >
-                <DishImage
-                  photo={c.cover}
-                  alt=""
-                  sizes="(max-width: 520px) 46vw, 240px"
-                  eager={i < 4}
-                  highPriority={i < 2}
-                  className={styles.tileImage}
-                />
-                <span className={styles.tileText}>
-                  <span className={styles.tileName}>{c.label[lang]}</span>
-                  <span className={styles.tileCount}>{t.dishCount(countByCategory.get(c.id) ?? 0)}</span>
-                </span>
-              </a>
-            </li>
-          ))}
+          {categories.map((c, i) => {
+            const wide = i === categories.length - 1 && categories.length % 2 === 1; // spans the row
+            return (
+              <li key={c.id}>
+                <a
+                  href={href("menu", c.id)}
+                  className={styles.tile}
+                  onClick={(e) => {
+                    if (!isPlainClick(e)) return;
+                    e.preventDefault();
+                    goTo("menu", c.id);
+                  }}
+                >
+                  <DishImage
+                    photo={c.cover}
+                    alt=""
+                    sizes={wide ? "(max-width: 520px) 92vw, 480px" : "(max-width: 520px) 46vw, 240px"}
+                    eager={i < 4}
+                    highPriority={i < 2}
+                    className={styles.tileImage}
+                  />
+                  <span className={styles.tileText}>
+                    <span className={styles.tileName}>{c.label[lang]}</span>
+                    <span className={styles.tileCount}>{t.dishCount(dishesByCategory.get(c.id)?.length ?? 0)}</span>
+                  </span>
+                </a>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
@@ -92,7 +93,12 @@ function SignatureCard({ dish }: { dish: Dish }) {
   const [second, third] = otherNames(lang);
   return (
     <article className={styles.sig}>
-      <DishImage photo={dish.photo} alt="" sizes="(max-width: 520px) 70vw, 300px" className={styles.sigImage} />
+      <div className={styles.sigMedia}>
+        <DishImage photo={dish.photo} alt="" sizes="(max-width: 520px) 70vw, 300px" className={styles.sigImage} />
+        <span className={styles.sigAdd}>
+          <AddToCartButton dishId={dish.id} variant="icon" />
+        </span>
+      </div>
       <div className={styles.sigBody}>
         <h3 className={styles.sigName} lang="uz">
           <a

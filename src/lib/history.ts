@@ -10,7 +10,7 @@ import { useSyncExternalStore } from "react";
 const NAV_EVENT = "firdavs:navigate";
 
 /** What kind of entry we pushed, so "close"/"home" can go back instead of stacking history. */
-type Marker = "view" | "dish";
+type Marker = "view" | "dish" | "sheet";
 
 function subscribe(onChange: () => void) {
   window.addEventListener("popstate", onChange);
@@ -47,6 +47,18 @@ export function navigate(href: string, push?: Marker) {
     window.history.replaceState({ firdavs: { pushed: currentMarker() } }, "", href);
   }
   window.dispatchEvent(new Event(NAV_EVENT));
+}
+
+/**
+ * An overlay (e.g. the cart sheet) gets its own history entry at the same URL,
+ * so the phone's Back button closes it instead of leaving the screen.
+ */
+export function pushOverlay() {
+  window.history.pushState({ firdavs: { pushed: "sheet" } }, "", getSnapshot());
+}
+
+export function isOverlayEntry(): boolean {
+  return currentMarker() === "sheet";
 }
 
 /** Go back if the current entry was pushed by us as `marker`; otherwise replace with `fallback`. */

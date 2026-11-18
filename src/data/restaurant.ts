@@ -22,9 +22,17 @@ export const restaurant = {
   phoneDisplay: "010-3238-2555",
   /** Used for the Call and SMS buttons (international format works from any phone). */
   phoneE164: "+821032382555",
+  /**
+   * Where table orders go: the guest's own SMS app opens with the order,
+   * addressed to this number (010-3238-2555 in international format, so it also
+   * works from phones with a foreign SIM card).
+   */
+  orderPhone: "+821032382555",
 
   /** Telegram username without "@" (opens https://t.me/<username>). `null` hides the button. */
   telegram: "Firdavs_restaurant1" as string | null,
+  /** Instagram usernames without "@" (each opens https://instagram.com/<username>). */
+  instagram: ["firdavs_restaurant_1", "firdavs_market"] as string[],
   /**
    * WhatsApp number, digits only in international format (opens https://wa.me/<number>).
    * Uses the restaurant phone; change it if WhatsApp runs on another number, `null` hides the button.
@@ -45,11 +53,11 @@ export const restaurant = {
   timeZone: "Asia/Seoul",
   /**
    * Opening hours, Monday → Sunday, 24h "HH:MM" (close earlier than open = after
-   * midnight; `null` entry = closed that day). While this is `null`, the hours
-   * and the "Open now" badge are not shown. Example:
-   *   hours: Array(7).fill({ open: "10:00", close: "22:00" }),
+   * midnight; `null` entry = closed that day). `null` hides the hours and the
+   * "Open now" badge. When every day is the same, the Info screen shows one line:
+   * "Ish vaqti - har kuni 10:00-23:00gacha".
    */
-  hours: null as DayHours[] | null,
+  hours: Array<DayHours>(7).fill({ open: "10:00", close: "23:00" }) as DayHours[] | null,
   /** e.g. "21:30" — shown under the hours. */
   lastOrder: null as string | null,
 
@@ -69,6 +77,10 @@ export function contactUrls() {
     sms: `sms:${restaurant.phoneE164}`,
     telegram: restaurant.telegram ? `https://t.me/${restaurant.telegram}` : null,
     whatsapp: restaurant.whatsapp ? `https://wa.me/${restaurant.whatsapp}` : null,
+    instagram: restaurant.instagram.map((user) => ({
+      user,
+      url: `https://instagram.com/${user}`,
+    })),
   };
 }
 

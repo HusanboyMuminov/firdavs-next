@@ -341,6 +341,17 @@
   margin-top: 10px;
 }
 
+/* SMS · Telegram · WhatsApp · Instagram in one row; 2 × 2 on very narrow phones. */
+.contactGrid[data-count="4"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 359px) {
+  .contactGrid[data-count="4"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .contactBtn {
   display: flex;
   flex-direction: column;
@@ -381,6 +392,215 @@
 .contactBtn[data-kind="whatsapp"] .contactIcon {
   color: #128c4a;
   background: #e2f6ea;
+}
+
+.contactBtn[data-kind="instagram"] .contactIcon {
+  color: #c13584;
+  background: #fbe8f3;
+}
+
+/* ── Social accounts (slightly larger, clearly visible handles) ───────── */
+.social {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.socialRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 14px 8px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--ivory);
+  transition: transform 0.12s ease;
+}
+
+.socialRow:active {
+  transform: scale(0.98);
+}
+
+.socialIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  flex-shrink: 0;
+  color: var(--burgundy);
+  background: var(--burgundy-tint);
+}
+
+.socialRow[data-kind="telegram"] .socialIcon {
+  color: #1b82b8;
+  background: #e3f2fa;
+}
+
+.socialRow[data-kind="instagram"] .socialIcon {
+  color: #c13584;
+  background: #fbe8f3;
+}
+
+.socialText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.socialName {
+  font-size: 16.5px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.005em;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.socialKind {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.socialExternal {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--ink-3);
+}
+
+.hoursEveryday {
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--burgundy);
+  background: var(--burgundy-tint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Private chat with the admin ─────────────────────────────────────── */
+.chatLog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-top: 12px;
+  padding: 4px 2px;
+}
+
+.chatLog:empty {
+  display: none;
+}
+
+.chatEmpty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 8px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.chatEmpty span {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.msg {
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--ivory);
+}
+
+.msg[data-from="admin"] {
+  align-self: flex-start;
+  border-bottom-left-radius: 6px;
+}
+
+.msg[data-from="guest"] {
+  align-self: flex-end;
+  color: var(--on-dark);
+  background: var(--burgundy);
+  border-color: transparent;
+  border-bottom-right-radius: 6px;
+}
+
+.msgBody {
+  font-size: 14.5px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.msgMeta {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+.chatForm {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.chatInput {
+  flex: 1;
+  min-width: 0;
+  min-height: 46px;
+  max-height: 132px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line-strong);
+  background: var(--ivory);
+  font: inherit;
+  font-size: 16px; /* 16px keeps iOS from zooming into the field */
+  line-height: 1.35;
+  color: var(--ink);
+  resize: none;
+  field-sizing: content; /* grows with the text where supported */
+}
+
+.chatInput:focus-visible {
+  outline: 2px solid var(--burgundy);
+  outline-offset: 1px;
+}
+
+.chatSend {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  color: var(--on-dark);
+  background: var(--burgundy);
+  transition:
+    transform 0.12s ease,
+    opacity 0.15s;
+}
+
+.chatSend:active {
+  transform: scale(0.94);
+}
+
+.chatSend:disabled {
+  opacity: 0.5;
 }
 
 .contactLabel {

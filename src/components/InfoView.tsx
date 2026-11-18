@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { dishes } from "@/data/menu";
 import type { PhotoCredit } from "@/data/photos";
 import { contactUrls, mapUrls, restaurant, type DayHours } from "@/data/restaurant";
 import type { Locale } from "@/i18n/config";
+import { fetchThread, sendChatMessage, type ChatMessage } from "@/lib/chat-client";
 import { getOpenStatus, useNow } from "@/lib/hours";
 import {
   disablePush,
@@ -21,10 +22,12 @@ import {
   ClockIcon,
   CopyIcon,
   ExternalIcon,
+  InstagramIcon,
   MessageIcon,
   PhoneIcon,
   PinIcon,
   ScooterIcon,
+  SendIcon,
   TelegramIcon,
   WhatsAppIcon,
 } from "./icons";
@@ -61,24 +64,34 @@ function Card({ icon, title, children }: { icon: ReactNode; title: string; child
   );
 }
 
-/** Weekly hours with today highlighted (evaluated in the restaurant's time zone). */
+/**
+ * Opening hours, evaluated in the restaurant's time zone. When every day is the
+ * same, one clear line ("Ish vaqti - har kuni 10:00-23:00gacha"); otherwise the
+ * full week with today highlighted.
+ */
 function HoursCard({ hours }: { hours: DayHours[] }) {
   const { t } = useApp();
   const now = useNow();
   const today = now === null ? -1 : getOpenStatus(now, hours, restaurant.timeZone).today;
+  const first = hours[0];
+  const uniform = first && hours.every((h) => h && h.open === first.open && h.close === first.close);
   return (
     <Card icon={<ClockIcon size={19} />} title={t.info.hours}>
-      <ul className={styles.hours}>
-        {hours.map((h, i) => (
-          <li key={t.weekdays[i]} className={styles.hoursRow} data-today={i === today || undefined}>
-            <span>
-              {t.weekdays[i]}
-              {i === today && <span className={styles.todayChip}>{t.info.today}</span>}
-            </span>
-            <span className={styles.hoursValue}>{h ? `${h.open} – ${h.close}` : t.info.closedDay}</span>
-          </li>
-        ))}
-      </ul>
+      {uniform ? (
+        <p className={styles.hoursEveryday}>{t.info.hoursEveryday(first.open, first.close)}</p>
+      ) : (
+        <ul className={styles.hours}>
+          {hours.map((h, i) => (
+            <li key={t.weekdays[i]} className={styles.hoursRow} data-today={i === today || undefined}>
+              <span>
+                {t.weekdays[i]}
+                {i === today && <span className={styles.todayChip}>{t.info.today}</span>}
+              </span>
+              <span className={styles.hoursValue}>{h ? `${h.open} – ${h.close}` : t.info.closedDay}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       {restaurant.lastOrder && <p className={styles.note}>{t.info.lastOrder(restaurant.lastOrder)}</p>}
     </Card>
   );
@@ -87,6 +100,7 @@ function HoursCard({ hours }: { hours: DayHours[] }) {
 function ContactCard() {
   const { t } = useApp();
   const links = contactUrls();
+  const mainInstagram = links.instagram[0];
   const actions: { key: string; href: string; label: string; icon: ReactNode; external?: boolean }[] = [
     { key: "sms", href: links.sms, label: t.info.sms, icon: <MessageIcon size={21} /> },
   ];
@@ -95,6 +109,18 @@ function ContactCard() {
   }
   if (links.whatsapp) {
     actions.push({ key: "whatsapp", href: links.whatsapp, label: t.info.whatsapp, icon: <WhatsAppIcon size={21} />, external: true });
+  }
+  if (mainInstagram) {
+    actions.push({ key: "instagram", href: mainInstagram.url, label: t.info.instagram, icon: <InstagramIcon size={21} />, external: true });
+  }
+
+  // Every account by name, slightly larger, so guests can find and follow them.
+  const socials: { kind: string; icon: ReactNode; handle: string; href: string }[] = [];
+  if (links.telegram && restaurant.telegram) {
+    socials.push({ kind: "telegram", icon: <TelegramIcon size={19} />, handle: `@${restaurant.telegram}`, href: links.telegram });
+  }
+  for (const account of links.instagram) {
+    socials.push({ kind: "instagram", icon: <InstagramIcon size={19} />, handle: `@${account.user}`, href: account.url });
   }
 
   return (
@@ -106,7 +132,7 @@ function ContactCard() {
           {t.info.call}
         </span>
       </a>
-      <ul className={styles.contactGrid}>
+      <ul className={styles.contactGrid} data-count={actions.length}>
         {actions.map((a) => (
           <li key={a.key}>
             <a
@@ -121,7 +147,136 @@ function ContactCard() {
           </li>
         ))}
       </ul>
-      {restaurant.telegram && <p className={styles.note}>Telegram: @{restaurant.telegram}</p>}
+      {socials.length > 0 && (
+        <ul className={styles.social} aria-label={t.info.social}>
+          {socials.map((s) => (
+            <li key={s.handle}>
+              <a href={s.href} className={styles.socialRow} data-kind={s.kind} target="_blank" rel="noopener noreferrer">
+                <span className={styles.socialIcon}>{s.icon}</span>
+                <span className={styles.socialText}>
+                  <span className={styles.socialName}>{s.handle}</span>
+                  <span className={styles.socialKind}>{s.kind === "telegram" ? t.info.telegram : t.info.instagram}</span>
+                </span>
+                <ExternalIcon size={16} className={styles.socialExternal} />
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+const twoDigits = (n: number) => String(n).padStart(2, "0");
+
+/** "14:05" today, "18.11 14:05" on earlier days (the guest's own clock). */
+function messageTime(ms: number): string {
+  const d = new Date(ms);
+  const time = `${twoDigits(d.getHours())}:${twoDigits(d.getMinutes())}`;
+  return d.toDateString() === new Date().toDateString()
+    ? time
+    : `${twoDigits(d.getDate())}.${twoDigits(d.getMonth() + 1)} ${time}`;
+}
+
+/** The guest's private conversation with the restaurant (only the admin sees it). */
+function ChatCard() {
+  const { t, lang } = useApp();
+  const [messages, setMessages] = useState<ChatMessage[] | null>(null);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const logRef = useRef<HTMLDivElement>(null);
+
+  // Load the conversation, then check for replies while the page is visible.
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => {
+      if (document.visibilityState !== "visible") return;
+      fetchThread()
+        .then((next) => {
+          if (!cancelled) setMessages(next);
+        })
+        .catch(() => {
+          if (!cancelled) setMessages((current) => current ?? []);
+        });
+    };
+    load();
+    const timer = setInterval(load, 10_000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
+
+  // Keep the newest message in view (only when one arrives, not on every poll).
+  const count = messages?.length ?? 0;
+  useEffect(() => {
+    const log = logRef.current;
+    if (log) log.scrollTop = log.scrollHeight;
+  }, [count]);
+
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const body = draft.trim();
+    if (busy || !body) return;
+    setBusy(true);
+    setFailed(false);
+    try {
+      setMessages(await sendChatMessage(body, lang));
+      setDraft("");
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card icon={<MessageIcon size={19} />} title={t.chat.title}>
+      <p className={styles.text}>{t.chat.subtitle}</p>
+      <div className={styles.chatLog} ref={logRef} aria-live="polite">
+        {messages?.length === 0 && (
+          <p className={styles.chatEmpty}>
+            {t.chat.empty}
+            <span>{t.chat.emptyHint}</span>
+          </p>
+        )}
+        {messages?.map((m) => (
+          <div key={m.id} className={styles.msg} data-from={m.sender}>
+            <p className={styles.msgBody}>{m.body}</p>
+            <span className={styles.msgMeta}>
+              {m.sender === "admin" ? t.chat.staff : t.chat.you} · {messageTime(m.createdAt)}
+            </span>
+          </div>
+        ))}
+      </div>
+      <form className={styles.chatForm} onSubmit={submit}>
+        <textarea
+          className={styles.chatInput}
+          value={draft}
+          rows={1}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            // Desktop: Enter sends, Shift+Enter adds a line (never mid-IME, e.g. Korean).
+            if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+            if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+            e.preventDefault();
+            e.currentTarget.form?.requestSubmit();
+          }}
+          placeholder={t.chat.placeholder}
+          maxLength={1000}
+          aria-label={t.chat.placeholder}
+        />
+        <button type="submit" className={styles.chatSend} disabled={busy || !draft.trim()} aria-label={t.chat.send}>
+          <SendIcon size={19} />
+        </button>
+      </form>
+      {failed && (
+        <p className={styles.error} role="alert">
+          {t.chat.error}
+        </p>
+      )}
+      <p className={styles.note}>{t.chat.privacy}</p>
     </Card>
   );
 }
@@ -249,6 +404,8 @@ export function InfoView() {
       </section>
 
       <ContactCard />
+
+      <ChatCard />
 
       <Card icon={<PinIcon size={19} />} title={t.info.address}>
         <p className={styles.address}>{restaurant.address[lang]}</p>

@@ -4,13 +4,15 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { dishById } from "@/data/menu";
 import { LOCALE_COOKIE, type Locale } from "@/i18n/config";
 import { ui } from "@/i18n/ui";
+import { useCart } from "@/lib/cart";
 import { useFavorites } from "@/lib/favorites";
-import { back, navigate, useLocation } from "@/lib/history";
+import { back, isOverlayEntry, navigate, pushOverlay, useLocation } from "@/lib/history";
 import { usePresence } from "@/lib/presence";
 import { parseRoute, routeHref, type CategoryFilter, type View } from "@/lib/routes";
 import { documentTitle } from "@/lib/titles";
 import { AppContext, type AppApi } from "./AppContext";
 import { BottomNav } from "./BottomNav";
+import { CartButton, CartSheet } from "./Cart";
 import { DishSheet } from "./DishSheet";
 import { FavoritesView } from "./FavoritesView";
 import { AppBar, BrandHeader } from "./Headers";
@@ -29,6 +31,8 @@ type Props = {
 export function MenuApp({ initialLang, initialPath }: Props) {
   const [lang, setLangState] = useState<Locale>(initialLang);
   const [query, setQuery] = useState("");
+  const [cartOpen, setCartOpen] = useState(false);
+  const cart = useCart();
   const location = useLocation(initialPath);
   const { view, category, dishId, prefix } = useMemo(() => parseRoute(location), [location]);
   const { ids: favorites, ready: favoritesReady, toggle: toggleFavorite } = useFavorites();
@@ -106,6 +110,25 @@ export function MenuApp({ initialLang, initialPath }: Props) {
     [prefix, view, category],
   );
 
+  /* ── Cart sheet (Back closes it) ───────────────────────────────────── */
+  const openCart = useCallback(() => {
+    pushOverlay();
+    setCartOpen(true);
+  }, []);
+
+  const closeCart = useCallback(() => {
+    if (isOverlayEntry()) window.history.back(); // the popstate below closes it
+    else setCartOpen(false);
+  }, []);
+
+  useEffect(() => {
+    const onPop = () => {
+      if (!isOverlayEntry()) setCartOpen(false);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   /* ── Search ─────────────────────────────────────────────────────────── */
   // Focusing search on Home opens the Menu screen; the input stays mounted
   // (same position in the tree), so focus and the keyboard are preserved.
@@ -157,7 +180,10 @@ export function MenuApp({ initialLang, initialPath }: Props) {
 
   return (
     <AppContext.Provider value={api}>
-      <div className={styles.app}>
+      <div
+        className={styles.app}
+        data-cart={cart.ready && cart.count > 0 && view !== "info" ? "" : undefined} // room for the cart button
+      >
         <div className={styles.top} data-tone={view === "home" ? "dark" : "light"}>
           {view === "home" ? <BrandHeader /> : <AppBar title={barTitle} />}
           {(view === "home" || view === "menu") && (
@@ -182,8 +208,10 @@ export function MenuApp({ initialLang, initialPath }: Props) {
           {view === "info" && <InfoView />}
         </main>
 
+        {view !== "info" && <CartButton onOpen={openCart} />}
         <BottomNav view={view} />
         <DishSheet dish={selectedDish} onClose={closeDish} />
+        <CartSheet open={cartOpen} onClose={closeCart} />
       </div>
     </AppContext.Provider>
   );

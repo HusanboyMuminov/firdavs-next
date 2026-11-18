@@ -4,6 +4,7 @@ import type { Dish, Tag } from "@/data/menu";
 import type { Locale } from "@/i18n/config";
 import { formatPrice } from "@/lib/format";
 import { isPlainClick, useApp } from "./AppContext";
+import { AddToCartButton } from "./Cart";
 import { DishImage } from "./DishImage";
 import { FlameIcon, HeartIcon, LeafIcon, UsersIcon } from "./icons";
 import styles from "./DishCard.module.css";
@@ -123,6 +124,9 @@ export function DishCard({ dish, eager = false }: { dish: Dish; eager?: boolean 
       <div className={styles.media}>
         <DishImage photo={dish.photo} alt="" sizes="112px" eager={eager} className={styles.image} />
         <FavoriteButton dishId={dish.id} className={styles.cardFav} />
+        <span className={styles.cardAdd}>
+          <AddToCartButton dishId={dish.id} variant="icon" />
+        </span>
       </div>
     </article>
   );

@@ -30,6 +30,7 @@
   font-weight: 700;
   line-height: 1.12;
   color: var(--ink);
+  font-variant-numeric: lining-nums; /* "Qatiq 0,5 L", not old-style "o,5" */
 }
 
 .link::after {
@@ -171,5 +172,12 @@
   position: absolute;
   top: 6px;
   right: 6px;
+  z-index: 2;
+}
+
+.cardAdd {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
   z-index: 2;
 }

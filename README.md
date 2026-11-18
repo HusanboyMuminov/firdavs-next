@@ -2,8 +2,9 @@
 
 Mobile-first QR menu for a halal Uzbek restaurant in Jeonju (전주시 덕진구 백제대로 608 1층).
 Four languages (Oʻzbekcha, 한국어, Русский, English), category tabs, search, dish details,
-favorites, contact buttons, opt-in notifications, and a password-protected admin dashboard with
-live visitor statistics.
+favorites, a cart with table orders sent by SMS, private guest ↔ restaurant messages, contact
+buttons, opt-in notifications, and a password-protected admin dashboard with live visitor
+statistics and the guest inbox.
 
 Next.js 16 (App Router, TypeScript) · CSS Modules · SQLite (`better-sqlite3`) · Web Push (`web-push`).
 No UI, icon or chart libraries.
@@ -24,7 +25,7 @@ host's environment in production. `.env*` files are gitignored (only `.env.examp
 | Variable | Needed for | Notes |
 | --- | --- | --- |
 | `ADMIN_PASSWORD` | `/admin` | At least 8 characters; long and unique. Without it the dashboard stays locked. |
-| `DATABASE_PATH` | analytics, admin sessions, push | SQLite file, default `.data/firdavs.sqlite`. Must be on a **persistent disk**. |
+| `DATABASE_PATH` | analytics, admin sessions, push, guest messages | SQLite file, default `.data/firdavs.sqlite`. Must be on a **persistent disk**. |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | notifications | Generate once: `npx web-push generate-vapid-keys`. Without them the Notifications card is hidden. |
 | `VAPID_SUBJECT` | notifications | `mailto:` address or `https://` URL push services can contact. |
 | `SITE_URL` | link previews | e.g. `https://menu.example.com` (not needed on Vercel). |
@@ -35,14 +36,16 @@ gets the public VAPID key (`/api/push/key`).
 ## What's filled in, and what's still yours to add
 
 Real details in `src/data/restaurant.ts`: name, address, phone (010-3238-2555), SMS, Telegram
-(@Firdavs_restaurant1), WhatsApp, delivery available, and the halal claim
+(@Firdavs_restaurant1), WhatsApp, Instagram (@firdavs_restaurant_1, @firdavs_market), opening
+hours (every day 10:00–23:00, shown as "Ish vaqti - har kuni 10:00-23:00gacha"), delivery
+available, the number table orders go to (`orderPhone`), and the halal claim
 (`100% HALAL · NO PORK · NO ALCOHOL`). Nothing below was invented — until you fill it in, guests
 see a neutral fallback or nothing:
 
 | What | Where | Until it's set |
 | --- | --- | --- |
-| Prices (₩, VAT included) | `price` on each dish in `src/data/menu.ts` | No price is shown |
-| Opening hours, last order | `hours`, `lastOrder` in `src/data/restaurant.ts` | "Please call us to check today's opening hours" |
+| Prices (₩, VAT included) | `price` on each dish in `src/data/menu.ts` | No price is shown; the cart and the order SMS say the total is confirmed by staff |
+| Last order time | `lastOrder` in `src/data/restaurant.ts` | Not shown |
 | WhatsApp number | `whatsapp` in `src/data/restaurant.ts` | Uses the restaurant phone — change it if WhatsApp runs on another number (`null` hides the button) |
 | Delivery apps (Baemin, …) | `deliveryApps` in `src/data/restaurant.ts` | "Delivery service available" + a call button |
 | Exact map pins | `mapLinks` in `src/data/restaurant.ts` | Map buttons search the address |
@@ -54,11 +57,42 @@ check them against your kitchen (e.g. lamb vs beef). `tags: ["featured"]` picks 
 Interface text lives in `src/i18n/ui.ts`.
 
 **Photos.** The images are openly licensed photos from Wikimedia Commons and Flickr (cropped to
-4:3 and resized), not photos of your own dishes; they're credited on the Info screen, as their
-licenses require. To use your own photo, overwrite the file in `src/assets/menu/` with the same
+4:3 and resized), not photos of your own dishes — a few show a close relative (tortellini in broth
+for chuchvara, a generic glass for branded drinks); they're credited on the Info screen, as their
+licenses require. **Xonim** has no photo yet (no openly licensed one exists), so it shows the menu's
+ornament until you add yours. To use your own photo, overwrite the file in `src/assets/menu/` with the same
 name (4:3, at least 1200×900 looks best) and delete its `credit` in `photos.ts`. Next.js serves
 them as AVIF/WebP in the size each screen needs, lazy-loads them, and a missing image file fails
 the build instead of shipping a broken image.
+
+## Ordering from the table (SMS)
+
+Guests tap **+** on any dish or drink (or "Add to cart" in its detail sheet), open the cart,
+press **Order**, enter their **table number** and press **Confirm**. That opens the phone's own
+SMS app with the order already written, addressed to `orderPhone` (010-3238-2555) — for example
+(made-up prices):
+
+```
+FIRDAVS order
+Table: 7
+
+1. Manti × 2 — ₩24,000
+2. Choy × 1 — ₩3,000
+
+Total: ₩27,000
+```
+
+A web page can't send an SMS by itself: the guest reviews the message and presses Send. If their
+SMS app doesn't open (e.g. on a computer), the sheet shows the text with a Copy button and the
+number to send it to. The cart is saved on the phone and cleared when the guest taps "Done".
+
+## Messages from guests
+
+On the Info screen guests can write to the restaurant ("Message us"). Each phone gets a random
+secret key (kept in its browser); the server stores only a hash of it, so a conversation can be
+read only on that phone and by the admin — never by other guests. Replies appear in the guest's
+chat, and the Info tab shows a badge until they're read. No names or phone numbers are collected;
+messages are deleted after 6 months.
 
 ## Admin dashboard — `/admin`
 
@@ -69,6 +103,8 @@ Sign in with `ADMIN_PASSWORD` (any language prefix works: `/ko/admin`, `/ru/admi
   45 s at the latest. The dashboard refreshes every 5 s while it's visible.
 - Visits (today / 7 days / all time), page views, a 14-day chart (with a table view), languages,
   most opened dishes and screens, and recent activity.
+- **Guest messages** — every conversation (newest first, with its language and unread count);
+  open one to read it and reply.
 - **Send a notification** to guests who turned notifications on — to everyone or one language,
   opening a chosen screen.
 
@@ -92,9 +128,9 @@ Every screen is a prerendered page, so any of these opens instantly:
 | --- | --- |
 | `/` | Home — categories, featured dishes, address & call |
 | `/menu` | Full menu |
-| `/menu/plov` | One category (`soups`, `mains`, `plov`, `kebabs`, `salads`, `bread`, `desserts`, `drinks`) |
+| `/menu/plov` | One category (`soups`, `mains`, `plov`, `salads`, `bread`, `desserts`, `drinks`) |
 | `/menu?dish=toy-oshi` | A dish's detail sheet (ids are in `menu.ts`) |
-| `/info` | Contact, address, hours, delivery, notifications |
+| `/info` | Contact, messages, address, hours, delivery, notifications |
 | `/ko/menu`, `/ru/…`, `/uz/…`, `/en/…` | Force a language (e.g. a Korean-only table card) |
 
 Without a language prefix, the guest gets the language they picked before, else their phone's
@@ -104,8 +140,8 @@ language, else English (`src/proxy.ts`).
 
 - Needs a **Node.js server with a persistent disk** for the SQLite file (a VPS, Railway/Render/Fly
   with a volume, …): `npm run build && npm start`. Serverless hosts such as Vercel have no
-  persistent filesystem — the menu would work there, but statistics, admin sessions and push
-  subscriptions would not survive.
+  persistent filesystem — the menu would work there, but statistics, admin sessions, push
+  subscriptions and guest messages would not survive.
 - Run a **single** server process (SQLite and the in-memory login rate limit are per process).
 - Serve it over **HTTPS** (required for notifications and secure cookies).
 - Set `SITE_URL` so link previews in KakaoTalk / Telegram / Instagram point to the right domain.

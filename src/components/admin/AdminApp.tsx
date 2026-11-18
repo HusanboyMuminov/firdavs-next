@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
 import { categories, dishById } from "@/data/menu";
 import { restaurant } from "@/data/restaurant";
 import { LOCALE_COOKIE, isLocale, localeLabels, localeNames, locales, type Locale } from "@/i18n/config";
 import { ui, type UI } from "@/i18n/ui";
 import { formatAgo } from "@/lib/intl";
 import type { Stats } from "@/server/analytics";
-import { ActivityIcon, ArrowIcon, BellIcon, LogoutIcon, SendIcon } from "../icons";
+import { ActivityIcon, ArrowIcon, BellIcon, LogoutIcon, MessageIcon, SendIcon } from "../icons";
 import { LanguagePicker } from "../LanguageSwitcher";
 import { StarMark } from "../Ornament";
 import { DailyChart, RankedBars } from "./AdminCharts";
@@ -305,6 +305,8 @@ function Dashboard({ stats, lang, t, live, failed }: { stats: AdminStats; lang: 
         ))}
       </ul>
 
+      <MessagesPanel t={t} lang={lang} live={live} now={stats.generatedAt} />
+
       <Card title={t.admin.daily} wide>
         <DailyChart days={stats.daily} lang={lang} t={t} />
       </Card>
@@ -367,6 +369,210 @@ function Dashboard({ stats, lang, t, live, failed }: { stats: AdminStats; lang: 
         <ArrowIcon size={16} />
       </a>
     </div>
+  );
+}
+
+type ThreadSummary = {
+  id: string;
+  lang: string;
+  lastBody: string;
+  lastSender: "guest" | "admin";
+  lastAt: number;
+  total: number;
+  unread: number;
+};
+type ThreadMessage = { id: number; sender: "guest" | "admin"; body: string; createdAt: number };
+
+async function getJson<T>(url: string): Promise<T> {
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) throw new Error(String(response.status));
+  return (await response.json()) as T;
+}
+
+/** Short, stable label for an anonymous conversation, e.g. "3FA2C1". */
+const guestCode = (threadId: string) => threadId.slice(0, 6).toUpperCase();
+
+/**
+ * Private guest ↔ restaurant messages. Guests are anonymous; a conversation is
+ * visible only to that guest and to the signed-in admin, who can reply.
+ */
+function MessagesPanel({ t, lang, live, now }: { t: UI; lang: Locale; live: boolean; now: number }) {
+  const [threads, setThreads] = useState<ThreadSummary[] | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ThreadMessage[]>([]);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const logRef = useRef<HTMLDivElement>(null);
+
+  // Conversation list: refresh while the dashboard is visible.
+  useEffect(() => {
+    if (!live) return;
+    let cancelled = false;
+    const load = () =>
+      getJson<{ threads: ThreadSummary[] }>("/api/admin/messages")
+        .then((data) => {
+          if (!cancelled) setThreads(data.threads);
+        })
+        .catch(() => {});
+    load();
+    const timer = setInterval(load, POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [live]);
+
+  // The open conversation: refresh while visible (this also marks it as read).
+  useEffect(() => {
+    if (!openId || !live) return;
+    let cancelled = false;
+    const load = () =>
+      getJson<{ messages: ThreadMessage[] }>(`/api/admin/messages/${openId}`)
+        .then((data) => {
+          if (!cancelled) setMessages(data.messages);
+        })
+        .catch(() => {});
+    load();
+    const timer = setInterval(load, POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [openId, live]);
+
+  // Keep the newest message in view when one arrives.
+  const count = messages.length;
+  useEffect(() => {
+    const log = logRef.current;
+    if (log) log.scrollTop = log.scrollHeight;
+  }, [count, openId]);
+
+  const openThread = (id: string) => {
+    setMessages([]);
+    setDraft("");
+    setFailed(false);
+    setOpenId(id);
+    setThreads((list) => list?.map((th) => (th.id === id ? { ...th, unread: 0 } : th)) ?? list);
+  };
+
+  const reply = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const body = draft.trim();
+    if (busy || !body || !openId) return;
+    setBusy(true);
+    setFailed(false);
+    try {
+      const response = await postJson(`/api/admin/messages/${openId}`, { body });
+      if (!response.ok) throw new Error(String(response.status));
+      setMessages(((await response.json()) as { messages: ThreadMessage[] }).messages);
+      setDraft("");
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const open = threads?.find((th) => th.id === openId);
+  const totalUnread = threads?.reduce((sum, th) => sum + th.unread, 0) ?? 0;
+  const langChip = (code: string) => (
+    <span className={styles.langChip} title={languageLabel(code)}>
+      {isLocale(code) ? localeLabels[code] : code}
+    </span>
+  );
+
+  return (
+    <section className={`${styles.card} ${styles.wide}`} aria-labelledby="admin-messages">
+      <h2 id="admin-messages" className={styles.cardTitle}>
+        <MessageIcon size={19} />
+        {t.admin.messages.title}
+        {totalUnread > 0 && <span className={styles.unreadPill}>{t.admin.messages.unread(totalUnread)}</span>}
+      </h2>
+
+      {openId === null ? (
+        threads === null ? (
+          <div className={styles.loadingSmall} aria-busy="true" />
+        ) : threads.length === 0 ? (
+          <p className={styles.muted}>{t.admin.messages.noThreads}</p>
+        ) : (
+          <ul className={styles.threadList}>
+            {threads.map((th) => (
+              <li key={th.id}>
+                <button
+                  type="button"
+                  className={styles.threadRow}
+                  data-unread={th.unread > 0 || undefined}
+                  onClick={() => openThread(th.id)}
+                >
+                  <span className={styles.threadTop}>
+                    <span className={styles.threadName}>{t.admin.messages.guest(guestCode(th.id))}</span>
+                    {langChip(th.lang)}
+                    <span className={styles.threadTime}>{formatAgo(Math.max(0, now - th.lastAt), lang)}</span>
+                    {th.unread > 0 && (
+                      <span className={styles.threadBadge} aria-label={t.admin.messages.unread(th.unread)}>
+                        {t.admin.messages.newBadge(th.unread)}
+                      </span>
+                    )}
+                  </span>
+                  <span className={styles.threadPreview}>
+                    {th.lastSender === "admin" ? `${t.admin.messages.you}: ` : ""}
+                    {th.lastBody}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : (
+        <div className={styles.thread}>
+          <div className={styles.threadHead}>
+            <button type="button" className={styles.threadBack} onClick={() => setOpenId(null)}>
+              ← {t.admin.messages.back}
+            </button>
+            <span className={styles.threadName}>{t.admin.messages.guest(guestCode(openId))}</span>
+            {open && langChip(open.lang)}
+          </div>
+          <div className={styles.threadLog} ref={logRef} aria-live="polite">
+            {messages.map((m) => (
+              <div key={m.id} className={styles.threadMsg} data-from={m.sender}>
+                <p className={styles.threadMsgBody}>{m.body}</p>
+                <span className={styles.threadMsgMeta}>
+                  {m.sender === "admin" ? t.admin.messages.you : t.admin.messages.guestLabel} ·{" "}
+                  {formatAgo(Math.max(0, now - m.createdAt), lang)}
+                </span>
+              </div>
+            ))}
+          </div>
+          <form className={styles.replyForm} onSubmit={reply}>
+            <textarea
+              className={styles.replyInput}
+              value={draft}
+              rows={1}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter sends, Shift+Enter adds a line (never mid-IME, e.g. Korean input).
+                if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+                if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
+              }}
+              placeholder={t.admin.messages.replyPlaceholder}
+              maxLength={1000}
+              aria-label={t.admin.messages.reply}
+            />
+            <button type="submit" className={styles.replySend} disabled={busy || !draft.trim()} aria-label={t.admin.messages.send}>
+              <SendIcon size={18} />
+            </button>
+          </form>
+          {failed && (
+            <p className={styles.formError} role="alert">
+              {t.admin.messages.failed}
+            </p>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 

@@ -8,6 +8,11 @@
   overflow-x: clip; /* never let a long string widen the page (keeps sticky working) */
 }
 
+/* The floating cart button sits above the bottom nav: keep the last item reachable. */
+.app[data-cart] {
+  padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 92px);
+}
+
 .top[data-tone="dark"] {
   padding-bottom: 20px;
   border-radius: 0 0 28px 28px;

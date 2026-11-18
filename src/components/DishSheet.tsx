@@ -11,6 +11,7 @@ import {
 import type { Dish } from "@/data/menu";
 import { formatPrice } from "@/lib/format";
 import { useApp } from "./AppContext";
+import { AddToCartButton } from "./Cart";
 import { iconTags, otherNames, popHeart, type IconTag } from "./DishCard";
 import { DishImage } from "./DishImage";
 import { CloseIcon, FlameIcon, HeartIcon, LeafIcon, UsersIcon } from "./icons";
@@ -198,19 +199,22 @@ function SheetContent({
       </div>
 
       <div className={styles.actions}>
-        <button
-          type="button"
-          className={styles.favBtn}
-          data-active={saved}
-          aria-pressed={saved}
-          onClick={(e) => {
-            popHeart(e.currentTarget, !saved);
-            toggleFavorite(dish.id);
-          }}
-        >
-          <HeartIcon size={20} filled={saved} />
-          {saved ? t.savedFavorite : t.addFavorite}
-        </button>
+        <div className={styles.actionRow}>
+          <AddToCartButton dishId={dish.id} />
+          <button
+            type="button"
+            className={styles.favSquare}
+            data-active={saved}
+            aria-pressed={saved}
+            aria-label={saved ? t.removeFavorite : t.addFavorite}
+            onClick={(e) => {
+              popHeart(e.currentTarget, !saved);
+              toggleFavorite(dish.id);
+            }}
+          >
+            <HeartIcon size={22} filled={saved} />
+          </button>
+        </div>
       </div>
     </div>
   );

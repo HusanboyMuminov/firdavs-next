@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { restaurant } from "@/data/restaurant";
+import { useChatUnread } from "@/lib/chat-client";
 import type { View } from "@/lib/routes";
 import { isPlainClick, useApp } from "./AppContext";
 import { HeartIcon, HomeIcon, InfoIcon, MenuIcon } from "./icons";
@@ -9,6 +10,7 @@ import styles from "./BottomNav.module.css";
 
 export function BottomNav({ view }: { view: View }) {
   const { t, href, goTo, favorites } = useApp();
+  const unreadReplies = useChatUnread(); // restaurant replies to the guest's messages (on the Info screen)
 
   const items: { id: View; label: string; icon: (active: boolean) => ReactNode; badge?: number }[] = [
     { id: "home", label: t.nav.home, icon: () => <HomeIcon size={23} /> },
@@ -19,7 +21,7 @@ export function BottomNav({ view }: { view: View }) {
       icon: (active) => <HeartIcon size={23} filled={active} />,
       badge: favorites.length,
     },
-    { id: "info", label: t.nav.info, icon: () => <InfoIcon size={23} /> },
+    { id: "info", label: t.nav.info, icon: () => <InfoIcon size={23} />, badge: unreadReplies },
   ];
 
   return (

@@ -5,7 +5,8 @@ import path from "node:path";
 
 /**
  * SQLite database (file path from DATABASE_PATH). Stores anonymous usage
- * analytics, admin sessions and push subscriptions — no personal data.
+ * analytics, admin sessions, push subscriptions and guests' private messages
+ * to the restaurant — no names, phone numbers or IP addresses.
  * Needs a persistent disk (any Node.js host / Docker volume).
  */
 
@@ -52,13 +53,37 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
   lang       TEXT NOT NULL,
   created_at INTEGER NOT NULL
 );
+
+-- Private guest ↔ admin messages. "thread" is the SHA-256 of a random key that
+-- only the guest's browser holds; read_at = when the other side read it.
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  thread     TEXT NOT NULL,
+  sender     TEXT NOT NULL,
+  body       TEXT NOT NULL,
+  lang       TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  read_at    INTEGER
+);
+CREATE INDEX IF NOT EXISTS chat_messages_thread ON chat_messages(thread, id);
+CREATE INDEX IF NOT EXISTS chat_messages_created ON chat_messages(created_at);
 `;
 
 type GlobalWithDb = typeof globalThis & { __firdavsDb?: Database.Database };
 
+// Re-applied once per module load, so tables added in an update also appear on
+// a connection reused across dev hot reloads (every statement is IF NOT EXISTS).
+let schemaApplied = false;
+
 export function getDb(): Database.Database {
   const g = globalThis as GlobalWithDb;
-  if (g.__firdavsDb) return g.__firdavsDb;
+  if (g.__firdavsDb) {
+    if (!schemaApplied) {
+      g.__firdavsDb.exec(SCHEMA);
+      schemaApplied = true;
+    }
+    return g.__firdavsDb;
+  }
 
   // A runtime location (env-configured), not a source file: keep it out of build tracing.
   const file = path.resolve(/*turbopackIgnore: true*/ process.env.DATABASE_PATH || ".data/firdavs.sqlite");
@@ -68,6 +93,7 @@ export function getDb(): Database.Database {
   db.pragma("synchronous = NORMAL");
   db.pragma("busy_timeout = 3000");
   db.exec(SCHEMA);
+  schemaApplied = true;
 
   g.__firdavsDb = db; // reuse across hot reloads / requests
   return db;

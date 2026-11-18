@@ -169,6 +169,32 @@ export const WhatsAppIcon = (p: IconProps) => (
   </Svg>
 );
 
+export const InstagramIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="4.5" />
+    <circle cx="12" cy="12" r="3.8" />
+    <path d="M16.8 7.2v.01" />
+  </Svg>
+);
+
+export const PlusIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 5.5v13M5.5 12h13" />
+  </Svg>
+);
+
+export const MinusIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M5.5 12h13" />
+  </Svg>
+);
+
+export const TrashIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M5 7h14M10 7V5.5A1.5 1.5 0 0 1 11.5 4h1A1.5 1.5 0 0 1 14 5.5V7M6.5 7l.8 11.2A1.5 1.5 0 0 0 8.8 19.6h6.4a1.5 1.5 0 0 0 1.5-1.4L17.5 7" />
+  </Svg>
+);
+
 export const BellIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z" />

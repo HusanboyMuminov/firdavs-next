@@ -1,0 +1,575 @@
+/* ── Floating cart button (inside the phone-width column on wide screens) ── */
+.fab {
+  position: fixed;
+  right: max(var(--gutter), calc(50% - 260px + var(--gutter)));
+  bottom: calc(var(--nav-h) + var(--safe-bottom) + 14px);
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 8px 0 16px;
+  border-radius: 999px;
+  color: var(--on-dark);
+  background: var(--burgundy);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 14px 30px -12px rgba(74, 13, 24, 0.85);
+  font-size: 15px;
+  font-weight: 700;
+  animation: fab-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.14s ease;
+}
+
+.fab:active {
+  transform: scale(0.96);
+}
+
+@keyframes fab-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.92);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fab {
+    animation: none;
+  }
+}
+
+.fabLabel {
+  white-space: nowrap;
+}
+
+.fabCount {
+  display: grid;
+  place-items: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--burgundy);
+  background: var(--on-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Add-to-cart buttons ─────────────────────────────────────────────── */
+.addBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 54px;
+  padding: 0 14px;
+  border-radius: 16px;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--on-dark);
+  background: var(--burgundy);
+  box-shadow: 0 10px 24px -14px rgba(107, 20, 36, 0.8);
+  transition:
+    transform 0.12s ease,
+    background-color 0.15s ease;
+}
+
+.addBtn:active {
+  transform: scale(0.98);
+}
+
+.addBtn[data-added] {
+  background: var(--green);
+}
+
+.addCount {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--burgundy);
+  background: var(--on-dark);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.quickAdd {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--on-dark);
+  background: var(--burgundy);
+  box-shadow:
+    0 0 0 2px rgba(255, 253, 249, 0.9),
+    0 4px 12px -4px rgba(74, 13, 24, 0.75);
+  transition:
+    transform 0.12s ease,
+    background-color 0.15s ease;
+}
+
+/* A bigger touch target than the visible circle. */
+.quickAdd::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+.quickAdd:active {
+  transform: scale(0.9);
+}
+
+.quickAdd[data-added] {
+  background: var(--green);
+}
+
+.quickCount {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  display: grid;
+  place-items: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--burgundy);
+  background: var(--on-dark);
+  box-shadow: 0 0 0 1.5px var(--burgundy);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Cart sheet (native <dialog> bottom sheet) ───────────────────────── */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  width: 100%;
+  max-width: 520px;
+  height: fit-content;
+  max-height: min(92dvh, 920px);
+  margin: auto auto 0;
+  padding: 0;
+  border: 0;
+  border-radius: 26px 26px 0 0;
+  color: var(--ink);
+  background: var(--paper);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-shadow: 0 -24px 60px -24px rgba(30, 6, 10, 0.55);
+  transform: translateY(100%);
+  transition:
+    transform 0.3s cubic-bezier(0.22, 0.9, 0.24, 1),
+    overlay 0.3s allow-discrete,
+    display 0.3s allow-discrete;
+}
+
+.sheet[open] {
+  transform: none;
+}
+
+@starting-style {
+  .sheet[open] {
+    transform: translateY(100%);
+  }
+}
+
+.sheet::backdrop {
+  background-color: rgba(30, 6, 10, 0);
+  transition:
+    background-color 0.3s ease,
+    overlay 0.3s allow-discrete,
+    display 0.3s allow-discrete;
+}
+
+.sheet[open]::backdrop {
+  background-color: rgba(30, 6, 10, 0.55);
+}
+
+@starting-style {
+  .sheet[open]::backdrop {
+    background-color: rgba(30, 6, 10, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .sheet::backdrop {
+    transition: none;
+  }
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(14px + var(--safe-bottom));
+}
+
+.head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 10px 20px;
+  background: var(--paper);
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: 23px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: var(--ink);
+  background: var(--ivory);
+  border: 1px solid var(--line);
+}
+
+/* ── Empty ───────────────────────────────────────────────────────────── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 36px 24px 48px;
+  text-align: center;
+  color: var(--ink-3);
+}
+
+.emptyTitle {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.emptyHint {
+  font-size: 14px;
+  max-width: 26ch;
+}
+
+/* ── Line items ──────────────────────────────────────────────────────── */
+.lines {
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lineText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lineName {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.lineAlt {
+  font-size: 13px;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+
+.linePrice {
+  margin-top: 2px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--burgundy);
+  font-variant-numeric: tabular-nums;
+}
+
+.qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--ivory);
+  border: 1px solid var(--line);
+}
+
+.qty button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: var(--burgundy);
+  background: var(--paper);
+  border: 1px solid var(--line);
+}
+
+.qty button:active {
+  transform: scale(0.92);
+}
+
+.qtyValue {
+  min-width: 24px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Footer / flow ───────────────────────────────────────────────────── */
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px 6px;
+}
+
+.total {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.totalRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.totalValue {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.totalNote {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 54px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--on-dark);
+  background: var(--burgundy);
+  box-shadow: 0 10px 24px -14px rgba(107, 20, 36, 0.8);
+  transition:
+    transform 0.12s ease,
+    opacity 0.15s ease;
+}
+
+.primary:active {
+  transform: scale(0.98);
+}
+
+.primary:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+}
+
+.ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 46px;
+  border-radius: 14px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+  background: var(--ivory);
+  border: 1px solid var(--line);
+}
+
+.flow {
+  display: flex;
+  flex-direction: column;
+  padding-top: 2px;
+}
+
+.flowHint {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.tableField {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 20px;
+}
+
+.tableInput {
+  width: 100%;
+  min-height: 64px;
+  padding: 0 18px;
+  border-radius: 18px;
+  border: 1.5px solid var(--line-strong);
+  background: var(--ivory);
+  font: inherit;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.tableInput::placeholder {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--ink-3);
+}
+
+.tableInput:focus-visible {
+  outline: 2px solid var(--burgundy);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.review {
+  margin: 14px 20px 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--ivory);
+  border: 1px solid var(--line);
+}
+
+.reviewList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.reviewList li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.reviewQty {
+  flex-shrink: 0;
+  font-weight: 800;
+  color: var(--burgundy);
+  font-variant-numeric: tabular-nums;
+}
+
+.confirmNote {
+  font-size: 12.5px;
+  line-height: 1.45;
+  text-align: center;
+  color: var(--ink-3);
+}
+
+/* ── After Confirm ───────────────────────────────────────────────────── */
+.sentIcon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin: 6px auto 12px;
+  border-radius: 50%;
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.sentHint {
+  padding: 0 24px;
+  font-size: 15px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--ink-2);
+}
+
+.fallback {
+  margin: 16px 20px 0;
+  padding: 12px 14px 14px;
+  border-radius: 16px;
+  border: 1px dashed var(--line-strong);
+  background: var(--ivory);
+}
+
+.fallbackLabel {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+.message {
+  margin: 8px 0 10px;
+  padding: 10px 12px;
+  max-height: 180px;
+  overflow: auto;
+  border-radius: 12px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.copyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--burgundy);
+  background: var(--burgundy-tint);
+}

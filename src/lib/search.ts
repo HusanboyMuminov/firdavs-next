@@ -60,7 +60,9 @@ function getVocabulary(): Map<string, Posting[]> {
   dishes.forEach((dish, i) => {
     add(i, "name", Object.values(dish.name).join(" "));
     add(i, "keyword", (dish.keywords ?? []).join(" "));
-    add(i, "category", categoryText.get(dish.category) ?? "");
+    for (const id of [dish.category, ...(dish.alsoIn ?? []).map((a) => a.category)]) {
+      add(i, "category", categoryText.get(id) ?? "");
+    }
     add(i, "ingredient", Object.values(dish.ingredients).join(" "));
     add(i, "description", Object.values(dish.description).join(" "));
   });
