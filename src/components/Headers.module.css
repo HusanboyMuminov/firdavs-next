@@ -1,0 +1,200 @@
+/* ── Brand header (Home) ─────────────────────────────────────────────── */
+.brand {
+  padding: max(12px, env(safe-area-inset-top)) var(--gutter) 6px;
+  color: var(--on-dark);
+}
+
+.utility {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 38px;
+}
+
+.utility > :last-child {
+  margin-left: auto;
+}
+
+.utility > :first-child:not(:last-child) {
+  min-width: 0;
+}
+
+.delivery {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 11px 0 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--on-dark);
+  background: rgba(251, 243, 230, 0.1);
+}
+
+.delivery svg {
+  flex-shrink: 0;
+  color: var(--gold-soft);
+}
+
+.deliveryText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.mark {
+  flex-shrink: 0;
+  color: var(--gold-soft);
+}
+
+.wordmark {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+  font-weight: inherit;
+}
+
+.name {
+  font-family: var(--font-serif);
+  font-size: clamp(30px, 9.8vw, 38px);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--on-dark);
+}
+
+.restaurant {
+  margin-top: 6px;
+  padding-left: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.52em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+}
+
+.tagline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--on-dark-2);
+  white-space: nowrap;
+}
+
+.tagline::before,
+.tagline::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(220, 189, 127, 0.55));
+}
+
+.tagline::after {
+  background: linear-gradient(90deg, rgba(220, 189, 127, 0.55), transparent);
+}
+
+/* ── 100% HALAL seal ─────────────────────────────────────────────────── */
+.seal {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  color: var(--gold-soft);
+  border: 1.5px solid var(--gold-soft);
+  box-shadow:
+    inset 0 0 0 3px var(--burgundy-deep),
+    inset 0 0 0 4px rgba(220, 189, 127, 0.55);
+  background: radial-gradient(circle at 50% 35%, rgba(220, 189, 127, 0.16), transparent 70%);
+  transform: rotate(-8deg);
+}
+
+.sealPct {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: lining-nums; /* Cormorant defaults to old-style figures */
+}
+
+.sealWord {
+  margin-top: 2px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding-left: 0.2em;
+}
+
+.sealSm {
+  width: 54px;
+  height: 54px;
+  color: var(--burgundy);
+  border-color: var(--gold);
+  box-shadow:
+    inset 0 0 0 3px var(--paper),
+    inset 0 0 0 4px rgba(184, 137, 58, 0.55);
+  background: none;
+}
+
+.sealSm .sealPct {
+  font-size: 16px;
+}
+
+.sealSm .sealWord {
+  font-size: 8.5px;
+  color: var(--gold-ink);
+}
+
+/* ── Compact app bar ─────────────────────────────────────────────────── */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  padding: max(10px, env(safe-area-inset-top)) var(--gutter) 10px;
+  color: var(--on-dark);
+  background-color: var(--burgundy-deep);
+  background-image: var(--pattern);
+}
+
+.barHome {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-left: -6px;
+  border-radius: 12px;
+  color: var(--gold-soft);
+}
+
+.barTitle {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-serif);
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,0 +1,74 @@
+.form {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--paper);
+  transition: box-shadow 0.15s ease;
+}
+
+.light {
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 1px 2px rgba(53, 8, 16, 0.04);
+}
+
+.dark {
+  box-shadow: 0 6px 20px -10px rgba(0, 0, 0, 0.5);
+}
+
+.form:focus-within {
+  box-shadow:
+    inset 0 0 0 2px var(--gold),
+    0 6px 20px -12px rgba(53, 8, 16, 0.35);
+}
+
+.icon {
+  position: absolute;
+  left: 14px;
+  color: var(--ink-3);
+  pointer-events: none;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 46px 0 44px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  font-size: 16px; /* ≥16px prevents iOS zoom on focus */
+  color: var(--ink);
+  text-overflow: ellipsis;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.input::placeholder {
+  color: var(--ink-3);
+  opacity: 1;
+}
+
+.input::-webkit-search-cancel-button,
+.input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.clear {
+  position: absolute;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: var(--ink-2);
+}
+
+.clear:active {
+  background: var(--ivory-deep);
+}

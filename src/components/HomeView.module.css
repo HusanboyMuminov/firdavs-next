@@ -1,0 +1,260 @@
+.home {
+  padding-top: 22px;
+}
+
+.section {
+  padding: 0 var(--gutter);
+  margin-bottom: 30px;
+}
+
+.viewAll {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 0 2px 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--burgundy);
+  white-space: nowrap;
+}
+
+/* ── Category tiles ──────────────────────────────────────────────────── */
+.tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.tile {
+  position: relative;
+  display: block;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transform: translateZ(0); /* clip the image to the rounded corners on iOS */
+  transition: transform 0.12s ease;
+}
+
+.tile:active {
+  transform: scale(0.97);
+}
+
+.tileImage {
+  aspect-ratio: 4 / 3;
+}
+
+.tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(30, 6, 10, 0) 30%, rgba(30, 6, 10, 0.78) 100%);
+}
+
+.tileText {
+  position: absolute;
+  z-index: 1;
+  left: 12px;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+}
+
+.tileName {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+}
+
+.tileCount {
+  margin-top: 2px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+/* ── Signature carousel ──────────────────────────────────────────────── */
+.carousel {
+  display: flex;
+  gap: 12px;
+  margin: 0 calc(var(--gutter) * -1);
+  padding: 2px var(--gutter) 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--gutter);
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.slide {
+  flex: 0 0 min(70%, 280px);
+  scroll-snap-align: start;
+}
+
+.sig {
+  position: relative;
+  height: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+  transform: translateZ(0);
+}
+
+.sigImage {
+  aspect-ratio: 4 / 3;
+}
+
+.sigBody {
+  padding: 12px 14px 14px;
+}
+
+.sigName {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.sigLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.sigLink:focus-visible {
+  outline: none;
+}
+
+.sigLink:focus-visible::after {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+  border-radius: var(--radius-lg);
+}
+
+.sigAlt,
+.sigAlt3 {
+  font-size: 13px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sigAlt {
+  margin-top: 3px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.sigAlt3 {
+  color: var(--ink-3);
+}
+
+.sigPrice {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--burgundy);
+  font-variant-numeric: tabular-nums;
+}
+
+.sigFav {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+}
+
+/* ── Info teaser ─────────────────────────────────────────────────────── */
+.teaser {
+  margin: 4px var(--gutter) 0;
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+}
+
+.teaserTop {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+}
+
+.teaserRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.teaserRow:first-child {
+  margin-top: 0;
+}
+
+.teaserRow svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--gold);
+}
+
+.teaserActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.primaryBtn,
+.secondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 46px;
+  padding: 0 12px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  transition: transform 0.12s ease;
+}
+
+.primaryBtn:active,
+.secondaryBtn:active {
+  transform: scale(0.97);
+}
+
+.primaryBtn {
+  color: var(--on-dark);
+  background: var(--burgundy);
+}
+
+.secondaryBtn {
+  color: var(--burgundy);
+  background: var(--burgundy-tint);
+}
+
+.teaserMore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold-ink);
+}

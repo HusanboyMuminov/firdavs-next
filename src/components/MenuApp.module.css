@@ -1,0 +1,32 @@
+.app {
+  position: relative;
+  max-width: 520px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 28px);
+  background: var(--ivory);
+  overflow-x: clip; /* never let a long string widen the page (keeps sticky working) */
+}
+
+.top[data-tone="dark"] {
+  padding-bottom: 20px;
+  border-radius: 0 0 28px 28px;
+  background-color: var(--burgundy-deep);
+  background-image: var(--pattern);
+  box-shadow: 0 14px 30px -22px rgba(53, 8, 16, 0.7);
+}
+
+.searchSlot {
+  padding: 14px var(--gutter) 0;
+}
+
+.main {
+  display: block;
+}
+
+/* Wider screens (tablet/desktop preview): frame the phone-width column. */
+@media (min-width: 560px) {
+  .app {
+    box-shadow: 0 0 0 1px rgba(53, 8, 16, 0.25), 0 30px 80px rgba(0, 0, 0, 0.35);
+  }
+}

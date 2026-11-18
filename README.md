@@ -1,0 +1,114 @@
+# FIRDAVS RESTAURANT — digital menu
+
+Mobile-first QR menu for a halal Uzbek restaurant in Jeonju (전주시 덕진구 백제대로 608 1층).
+Four languages (Oʻzbekcha, 한국어, Русский, English), category tabs, search, dish details,
+favorites, contact buttons, opt-in notifications, and a password-protected admin dashboard with
+live visitor statistics.
+
+Next.js 16 (App Router, TypeScript) · CSS Modules · SQLite (`better-sqlite3`) · Web Push (`web-push`).
+No UI, icon or chart libraries.
+
+```bash
+npm install
+cp .env.example .env.local   # then fill it in (see "Configuration")
+npm run dev                  # http://localhost:3000  ·  admin: http://localhost:3000/admin
+npm run build && npm start
+npm run lint
+```
+
+## Configuration
+
+All secrets and settings come from environment variables — `.env.local` in development, your
+host's environment in production. `.env*` files are gitignored (only `.env.example` is committed).
+
+| Variable | Needed for | Notes |
+| --- | --- | --- |
+| `ADMIN_PASSWORD` | `/admin` | At least 8 characters; long and unique. Without it the dashboard stays locked. |
+| `DATABASE_PATH` | analytics, admin sessions, push | SQLite file, default `.data/firdavs.sqlite`. Must be on a **persistent disk**. |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | notifications | Generate once: `npx web-push generate-vapid-keys`. Without them the Notifications card is hidden. |
+| `VAPID_SUBJECT` | notifications | `mailto:` address or `https://` URL push services can contact. |
+| `SITE_URL` | link previews | e.g. `https://menu.example.com` (not needed on Vercel). |
+
+The private VAPID key and the admin password are only read on the server; the browser only ever
+gets the public VAPID key (`/api/push/key`).
+
+## What's filled in, and what's still yours to add
+
+Real details in `src/data/restaurant.ts`: name, address, phone (010-3238-2555), SMS, Telegram
+(@Firdavs_restaurant1), WhatsApp, delivery available, and the halal claim
+(`100% HALAL · NO PORK · NO ALCOHOL`). Nothing below was invented — until you fill it in, guests
+see a neutral fallback or nothing:
+
+| What | Where | Until it's set |
+| --- | --- | --- |
+| Prices (₩, VAT included) | `price` on each dish in `src/data/menu.ts` | No price is shown |
+| Opening hours, last order | `hours`, `lastOrder` in `src/data/restaurant.ts` | "Please call us to check today's opening hours" |
+| WhatsApp number | `whatsapp` in `src/data/restaurant.ts` | Uses the restaurant phone — change it if WhatsApp runs on another number (`null` hides the button) |
+| Delivery apps (Baemin, …) | `deliveryApps` in `src/data/restaurant.ts` | "Delivery service available" + a call button |
+| Exact map pins | `mapLinks` in `src/data/restaurant.ts` | Map buttons search the address |
+| Serving sizes, spicy / vegetarian / for-sharing icons | `portion`, `tags` on each dish | Not shown |
+
+Every dish has its name, ingredients and description in all four languages (`menu.ts` —
+TypeScript reports any missing translation). Descriptions describe each dish in general terms;
+check them against your kitchen (e.g. lamb vs beef). `tags: ["featured"]` picks the Home carousel.
+Interface text lives in `src/i18n/ui.ts`.
+
+**Photos.** The images are openly licensed photos from Wikimedia Commons and Flickr (cropped to
+4:3 and resized), not photos of your own dishes; they're credited on the Info screen, as their
+licenses require. To use your own photo, overwrite the file in `src/assets/menu/` with the same
+name (4:3, at least 1200×900 looks best) and delete its `credit` in `photos.ts`. Next.js serves
+them as AVIF/WebP in the size each screen needs, lazy-loads them, and a missing image file fails
+the build instead of shipping a broken image.
+
+## Admin dashboard — `/admin`
+
+Sign in with `ADMIN_PASSWORD` (any language prefix works: `/ko/admin`, `/ru/admin`, …).
+
+- **Active now** — devices with the menu open, updated live. Every open menu sends a small
+  heartbeat every 15 s; a device that stops (tab closed or hidden) drops out at once, or after
+  45 s at the latest. The dashboard refreshes every 5 s while it's visible.
+- Visits (today / 7 days / all time), page views, a 14-day chart (with a table view), languages,
+  most opened dishes and screens, and recent activity.
+- **Send a notification** to guests who turned notifications on — to everyone or one language,
+  opening a chosen screen.
+
+Privacy: statistics are anonymous. The browser keeps a random id (no name, phone, e-mail, IP
+address or device details are stored); the server keeps screens, dish ids and languages. Login
+attempts are rate-limited; sessions are HttpOnly, SameSite=Strict cookies that expire after 12 h.
+
+## Notifications (Web Push)
+
+Guests opt in on the Info screen; permission is requested only when they tap the button, and they
+can turn it off there at any time. Works in Chrome, Edge, Firefox and Samsung Internet on Android
+and desktop, and in Safari on macOS. **On iPhone/iPad (iOS 16.4+), Apple allows web notifications
+only after "Share → Add to Home Screen"** — the card explains this. Expired subscriptions are
+removed automatically when a send fails with 404/410.
+
+## Links for QR codes
+
+Every screen is a prerendered page, so any of these opens instantly:
+
+| URL | Opens |
+| --- | --- |
+| `/` | Home — categories, featured dishes, address & call |
+| `/menu` | Full menu |
+| `/menu/plov` | One category (`soups`, `mains`, `plov`, `kebabs`, `salads`, `bread`, `desserts`, `drinks`) |
+| `/menu?dish=toy-oshi` | A dish's detail sheet (ids are in `menu.ts`) |
+| `/info` | Contact, address, hours, delivery, notifications |
+| `/ko/menu`, `/ru/…`, `/uz/…`, `/en/…` | Force a language (e.g. a Korean-only table card) |
+
+Without a language prefix, the guest gets the language they picked before, else their phone's
+language, else English (`src/proxy.ts`).
+
+## Deploying
+
+- Needs a **Node.js server with a persistent disk** for the SQLite file (a VPS, Railway/Render/Fly
+  with a volume, …): `npm run build && npm start`. Serverless hosts such as Vercel have no
+  persistent filesystem — the menu would work there, but statistics, admin sessions and push
+  subscriptions would not survive.
+- Run a **single** server process (SQLite and the in-memory login rate limit are per process).
+- Serve it over **HTTPS** (required for notifications and secure cookies).
+- Set `SITE_URL` so link previews in KakaoTalk / Telegram / Instagram point to the right domain.
+- If you put a CDN in front, don't cache `/` and other unprefixed paths by URL alone — their
+  language depends on the visitor (the `/<lang>/…` paths are safe to cache), and never cache
+  `/api/*` or `/sw.js`.

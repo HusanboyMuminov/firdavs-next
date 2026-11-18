@@ -1,0 +1,198 @@
+/* ─── Firdavs design tokens ─────────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --ivory: #fbf7ef;
+  --ivory-deep: #f4ecdd;
+  --paper: #fffdf9;
+  --line: #eadfca;
+  --line-strong: #dccaa8;
+
+  /* Brand */
+  --burgundy: #6b1424;
+  --burgundy-deep: #4a0d18;
+  --burgundy-night: #350810;
+  --burgundy-tint: #f6e9e6;
+  --gold: #b8893a;
+  --gold-soft: #dcbd7f;
+  --gold-ink: #85601f; /* gold text on light surfaces (AA) */
+
+  /* Text */
+  --ink: #2b1b15;
+  --ink-2: #5b4840;
+  --ink-3: #75625a; /* AA on ivory */
+  --on-dark: #fbf3e6;
+  --on-dark-2: rgba(251, 243, 230, 0.78);
+
+  /* Status */
+  --green: #2e7a50;
+  --green-soft: #e3f1e8;
+  --spicy: #b13a1e;
+  --veg: #3c7a3a;
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --shadow-card: 0 1px 2px rgba(53, 8, 16, 0.05), 0 6px 18px -8px rgba(53, 8, 16, 0.14);
+  --shadow-raised: 0 12px 32px -12px rgba(53, 8, 16, 0.35);
+
+  /* Burgundy header texture: a faint lattice of eight-point stars. */
+  --pattern:
+    radial-gradient(130% 90% at 92% -12%, rgba(184, 137, 58, 0.28), transparent 58%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cpolygon points='24,15 25.8,19.66 30.36,17.64 28.34,22.2 33,24 28.34,25.8 30.36,30.36 25.8,28.34 24,33 22.2,28.34 17.64,30.36 19.66,25.8 15,24 19.66,22.2 17.64,17.64 22.2,19.66' fill='none' stroke='%23dcbd7f' stroke-opacity='0.1'/%3E%3Cg fill='%23dcbd7f' fill-opacity='0.14'%3E%3Ccircle cx='0' cy='0' r='1.6'/%3E%3Ccircle cx='48' cy='0' r='1.6'/%3E%3Ccircle cx='0' cy='48' r='1.6'/%3E%3Ccircle cx='48' cy='48' r='1.6'/%3E%3C/g%3E%3C/svg%3E");
+
+  --gutter: 16px;
+  --nav-h: 64px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  --font-ko: "Apple SD Gothic Neo", "Noto Sans KR", "Noto Sans CJK KR", "Malgun Gothic", sans-serif;
+  --font-ui: var(--font-sans), var(--font-ko);
+  --font-serif: var(--font-display), "Iowan Old Style", Georgia, var(--font-ko), serif;
+
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--burgundy-deep); /* matches the header during overscroll */
+  scroll-padding-top: 72px;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--ivory);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+ul,
+ol,
+figure {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+  touch-action: manipulation;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* Keep Korean words whole; break only text that can't fit its line at all.
+   (`anywhere` here would also let Latin words like the wordmark split on /ko pages.) */
+[lang="ko"] {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* Lock the page behind an open dialog. */
+html:has(dialog[open]) {
+  overflow: hidden;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── 404 page (kept here: a separate stylesheet would be preloaded on every page) ── */
+.nf-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 100dvh;
+  padding: 32px;
+  text-align: center;
+  color: var(--ink-3);
+  background: var(--ivory);
+}
+
+.nf-star {
+  margin-bottom: 14px;
+  color: var(--gold);
+}
+
+.nf-title {
+  font-family: var(--font-serif);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--burgundy);
+}
+
+.nf-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  margin-top: 22px;
+  padding: 0 24px;
+  border-radius: 14px;
+  font-weight: 700;
+  color: var(--on-dark);
+  background: var(--burgundy);
+}

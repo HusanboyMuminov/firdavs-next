@@ -1,0 +1,51 @@
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  max-width: 100%;
+  height: 28px;
+  padding: 0 11px 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #8b7a72;
+}
+
+.status[data-open="true"] .dot {
+  background: #5fd38d;
+  box-shadow: 0 0 0 3px rgba(95, 211, 141, 0.22);
+}
+
+.dark {
+  color: var(--on-dark);
+  background: rgba(251, 243, 230, 0.1);
+}
+
+.light {
+  color: var(--ink-2);
+  background: var(--ivory-deep);
+}
+
+.light[data-open="true"] {
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.light[data-open="true"] .dot {
+  background: var(--green);
+  box-shadow: 0 0 0 3px rgba(46, 122, 80, 0.15);
+}
