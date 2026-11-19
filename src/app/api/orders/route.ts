@@ -3,6 +3,7 @@ import { isLocale } from "@/i18n/config";
 import { formatPrice } from "@/lib/format";
 import { clientIp, createRateLimiter, errorResponse, isSameOrigin, json, readJson } from "@/server/http";
 import { notifyAdmins } from "@/server/notify";
+import { orderIpAllowed } from "@/server/order-access";
 import { cancelOrder, createOrder, deliverOrder, isTableNumber, orderExists, orderText, parseItems } from "@/server/orders";
 
 // Per IP (guests on the restaurant Wi-Fi share one); repeated presses of one order don't count twice.
@@ -32,7 +33,9 @@ export async function POST(request: NextRequest) {
   ) {
     return errorResponse(400, "invalid_request");
   }
-  if (!isTableNumber(table)) return errorResponse(400, "invalid_table");
+  if (!isTableNumber(table)) return errorResponse(400, "invalid_table"); // tables 1–14 only
+  // Ordering only from the restaurant Wi-Fi (checked here on the server; browsing is never restricted).
+  if (!orderIpAllowed(request)) return errorResponse(403, "wifi_required");
 
   try {
     if (!orderExists(requestId) && !limiter.take(clientIp(request))) return errorResponse(429, "rate_limited");

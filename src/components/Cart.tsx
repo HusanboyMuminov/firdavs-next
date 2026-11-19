@@ -25,7 +25,8 @@ type Result = {
   text: string;
 };
 
-const TABLE_RE = /^[1-9]\d{0,2}$/;
+/** Tables 1–14 only: no 0, signs, decimals, letters, leading zeros or empty input. */
+const isTable = (value: string) => /^[1-9]\d?$/.test(value) && Number(value) <= restaurant.tables;
 
 function newRequestId(): string {
   const bytes = new Uint8Array(16);
@@ -151,7 +152,7 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (sending.current) return;
-    if (!TABLE_RE.test(tableNo)) {
+    if (!isTable(tableNo)) {
       setError(t.cart.tableInvalid);
       return;
     }
@@ -180,7 +181,15 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
       });
       if (!response.ok) {
         const code = ((await response.json().catch(() => ({}))) as { error?: string }).error;
-        setError(code === "invalid_table" ? t.cart.tableUnknown : code === "rate_limited" ? t.cart.tooMany : t.cart.failed);
+        setError(
+          code === "invalid_table"
+            ? t.cart.tableUnknown
+            : code === "wifi_required"
+              ? t.cart.wifiOnly
+              : code === "rate_limited"
+                ? t.cart.tooMany
+                : t.cart.failed,
+        );
         return;
       }
       const data = (await response.json()) as Result;
@@ -421,7 +430,7 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
                 className={styles.tableInput}
                 value={table}
                 onChange={(e) => {
-                  setTable(e.target.value.replace(/\D/g, "").slice(0, 3));
+                  setTable(e.target.value.slice(0, 4)); // kept as typed: anything but 1–14 is rejected with a message
                   setError(null);
                 }}
                 placeholder={t.cart.tablePlaceholder}

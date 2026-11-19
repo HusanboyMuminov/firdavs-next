@@ -32,7 +32,8 @@ host's environment in production. `.env*` files are gitignored (only `.env.examp
 | `SOLAPI_API_KEY`, `SOLAPI_API_SECRET` *or* `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` | kitchen SMS | One SMS provider. Solapi suits Korean numbers. |
 | `SMS_FROM` | kitchen SMS | Sender number registered with the provider (Korea requires pre-registration). |
 | `ORDER_SMS_TO` | kitchen SMS | Kitchen phone; default 010-3238-2555. |
-| `TABLE_COUNT` | orders | Optional: highest table number (default 999). |
+| `ORDER_ALLOWED_IPS` | orders | Public IP(s) of the restaurant Wi-Fi allowed to order (default `115.139.203.135`; comma-separated, CIDR ok; `*` = off, local dev only). |
+| `ORDER_IP_HEADER` | orders | Only off Render: the header your reverse proxy sets with the real client IP (e.g. `x-real-ip`). |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Telegram orders | Bot token from @BotFather and the chat that receives orders (see below). |
 
 The private VAPID key and the admin password are only read on the server; the browser only ever
@@ -73,6 +74,12 @@ them as AVIF/WebP in the size each screen needs, lazy-loads them, and a missing 
 the build instead of shipping a broken image.
 
 ## Ordering from the table
+
+Anyone can browse the menu, but **orders are accepted only from the restaurant Wi-Fi** (public IP in
+`ORDER_ALLOWED_IPS`, checked by the server) and only for **tables 1–14** (`tables` in
+`src/data/restaurant.ts`). Elsewhere the guest sees "Ordering is available only when connected to
+FIRDAVS Restaurant Wi-Fi." On Render the real client IP comes from Cloudflare's `CF-Connecting-IP`;
+`X-Forwarded-For` is never trusted.
 
 Guests tap **+** on any dish or drink (or "Add to cart" in its detail sheet), adjust quantities in
 the cart (line subtotals and the total update instantly), press **Order**, enter their **table

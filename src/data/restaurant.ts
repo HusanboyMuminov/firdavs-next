@@ -29,6 +29,9 @@ export const restaurant = {
    */
   orderPhone: "+821032382555",
 
+  /** Tables are numbered 1…tables; orders for any other number are refused. */
+  tables: 14,
+
   /** Telegram username without "@" (opens https://t.me/<username>). `null` hides the button. */
   telegram: "Firdavs_restaurant1" as string | null,
   /** Instagram usernames without "@" (each opens https://instagram.com/<username>). */

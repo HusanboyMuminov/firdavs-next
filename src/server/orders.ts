@@ -1,5 +1,6 @@
 import "server-only";
 import { dishById } from "@/data/menu";
+import { restaurant } from "@/data/restaurant";
 import { formatPrice, priceLabel, unitPrice } from "@/lib/format";
 import { getDb } from "./db";
 import { kitchenNumber, sendSms, smsProvider } from "./sms";
@@ -32,13 +33,9 @@ export type Order = {
 
 export const MAX_LINES = 50;
 export const MAX_QTY = 99;
-const TABLE_RE = /^[1-9]\d{0,2}$/;
-
-/** "7" … "999"; with TABLE_COUNT set (e.g. 20), at most that number. */
+/** "1" … "14" only (no 0, signs, decimals, letters or leading zeros). */
 export function isTableNumber(value: unknown): value is string {
-  if (typeof value !== "string" || !TABLE_RE.test(value)) return false;
-  const max = Number(process.env.TABLE_COUNT);
-  return !(Number.isInteger(max) && max > 0 && Number(value) > max);
+  return typeof value === "string" && /^[1-9]\d?$/.test(value) && Number(value) <= restaurant.tables;
 }
 
 /** Validates [{ id, qty }] against the menu; null if anything is off. */
