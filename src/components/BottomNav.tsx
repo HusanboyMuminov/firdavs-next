@@ -5,7 +5,7 @@ import { restaurant } from "@/data/restaurant";
 import { useChatUnread } from "@/lib/chat-client";
 import type { View } from "@/lib/routes";
 import { isPlainClick, useApp } from "./AppContext";
-import { HeartIcon, HomeIcon, InfoIcon, MenuIcon } from "./icons";
+import { GalleryIcon, HeartIcon, HomeIcon, InfoIcon, MenuIcon } from "./icons";
 import styles from "./BottomNav.module.css";
 
 export function BottomNav({ view }: { view: View }) {
@@ -15,6 +15,7 @@ export function BottomNav({ view }: { view: View }) {
   const items: { id: View; label: string; icon: (active: boolean) => ReactNode; badge?: number }[] = [
     { id: "home", label: t.nav.home, icon: () => <HomeIcon size={23} /> },
     { id: "menu", label: t.nav.menu, icon: () => <MenuIcon size={23} /> },
+    { id: "gallery", label: t.nav.gallery, icon: () => <GalleryIcon size={23} /> },
     {
       id: "favorites",
       label: t.nav.favorites,

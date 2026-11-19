@@ -14,7 +14,7 @@
 
 .list {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   height: var(--nav-h);
 }
 
@@ -59,6 +59,14 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Five items: keep every label whole on the narrowest phones. */
+@media (max-width: 359px) {
+  .label {
+    font-size: 10px;
+    letter-spacing: 0;
+  }
 }
 
 .badge {

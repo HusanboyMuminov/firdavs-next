@@ -8,11 +8,12 @@ import { isLocale } from "@/i18n/config";
  *   /menu/<category>   Menu filtered to one category, e.g. /menu/plov
  *   /favorites         Saved dishes
  *   /info              Address, hours, delivery, halal info
+ *   /gallery           Photos and videos of the restaurant
  *   …?dish=<id>        Opens the dish sheet on top of any screen
  * Paths may carry a language prefix (/ko/menu); without it the proxy picks one.
  */
 
-export type View = "home" | "menu" | "favorites" | "info";
+export type View = "home" | "menu" | "favorites" | "info" | "gallery";
 export type CategoryFilter = CategoryId | "all";
 
 export type RouteState = {
@@ -35,7 +36,7 @@ export function isKnownSlug(slug: string[] | undefined): boolean {
   const [first, second, ...rest] = slug;
   if (rest.length) return false;
   if (first === "menu") return second === undefined || isCategoryId(second);
-  return second === undefined && (first === "favorites" || first === "info");
+  return second === undefined && (first === "favorites" || first === "info" || first === "gallery");
 }
 
 /** Every screen path, for static prerendering. */
@@ -45,6 +46,7 @@ export const staticSlugs: string[][] = [
   ...categories.map((c) => ["menu", c.id]),
   ["favorites"],
   ["info"],
+  ["gallery"],
 ];
 
 /** Parses "pathname?search" (with or without a language prefix). */
@@ -60,7 +62,7 @@ export function parseRoute(location: string): RouteState {
   if (first === "menu") {
     view = "menu";
     if (isCategoryId(second)) category = second;
-  } else if (first === "favorites" || first === "info") {
+  } else if (first === "favorites" || first === "info" || first === "gallery") {
     view = first;
   }
 

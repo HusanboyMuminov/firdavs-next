@@ -18,6 +18,8 @@ export function screenTitle(lang: Locale, view: View, category: CategoryFilter =
       return t.favoritesTitle;
     case "info":
       return t.info.title;
+    case "gallery":
+      return t.nav.gallery;
   }
 }
 

@@ -15,6 +15,7 @@ import { BottomNav } from "./BottomNav";
 import { CartButton, CartSheet } from "./Cart";
 import { DishSheet } from "./DishSheet";
 import { FavoritesView } from "./FavoritesView";
+import { GalleryView } from "./GalleryView";
 import { AppBar, BrandHeader } from "./Headers";
 import { HomeView } from "./HomeView";
 import { InfoView } from "./InfoView";
@@ -176,7 +177,8 @@ export function MenuApp({ initialLang, initialPath }: Props) {
   );
 
   const selectedDish = dishId ? (dishById.get(dishId) ?? null) : null;
-  const barTitle = view === "favorites" ? t.favoritesTitle : view === "info" ? t.info.title : t.nav.menu;
+  const barTitle =
+    view === "favorites" ? t.favoritesTitle : view === "info" ? t.info.title : view === "gallery" ? t.nav.gallery : t.nav.menu;
 
   return (
     <AppContext.Provider value={api}>
@@ -206,6 +208,7 @@ export function MenuApp({ initialLang, initialPath }: Props) {
           )}
           {view === "favorites" && <FavoritesView />}
           {view === "info" && <InfoView />}
+          {view === "gallery" && <GalleryView />}
         </main>
 
         {view !== "info" && <CartButton onOpen={openCart} />}
