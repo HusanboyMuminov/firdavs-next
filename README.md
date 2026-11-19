@@ -96,7 +96,9 @@ The guest sees "Sent to the kitchen" **only after the SMS provider (or Telegram)
 message**. If the chosen channel isn't configured (or it fails), they're told so honestly and can send the same text from their own
 phone with one tap (or show the screen to a waiter), or press **Cancel** (Bekor qilish): the order
 is then marked cancelled on the server, can never be sent afterwards, the admin gets an alert, and the
-dishes stay in the cart. Every order — with its SMS status — is listed
+dishes stay in the cart. A guest who chose **Telegram** is never switched to SMS: if the bot fails they
+can press **Send again** (the same order — a message that already went out is never sent twice) or cancel.
+Every order — with its SMS/Telegram status and, for failures, the reason — is listed
 under **Orders** in the admin dashboard. Items whose price depends on the size (Gazli ichimliklar
 ₩2,500 / ₩3,500) or isn't set yet are marked "priced by staff" and kept out of the total.
 

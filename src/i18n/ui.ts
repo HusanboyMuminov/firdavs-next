@@ -81,7 +81,9 @@ const en = {
     sentHint: (table: string) => `Thank you! We’ll bring your order to table ${table}.`,
     savedTitle: "Order saved — please send it",
     savedHint: (phone: string) => `We couldn’t text the kitchen automatically. Send this order by SMS to ${phone} or show this screen to a waiter.`,
-    savedHintTelegram: (phone: string) => `We couldn’t send your order through the Telegram bot. Send it by SMS to ${phone} or show this screen to a waiter.`,
+    savedHintTelegram: "We couldn’t send your order through the Telegram bot. Please try again or show this screen to a waiter.",
+    telegramOff: "The Telegram bot isn’t connected yet. Show this screen to a waiter, or cancel and send the order by SMS.",
+    retryTelegram: "Send again",
     channelTitle: "Send the order via",
     viaSms: "SMS",
     viaTelegram: "Telegram Bot",
@@ -229,7 +231,7 @@ const en = {
       tgNotConfigured: "No Telegram",
       tgOn: "Telegram bot: orders are posted to the restaurant chat",
       tgMissing:
-        "The Telegram bot isn’t configured. Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID on the server. Until then, guests who choose Telegram are asked to send the order by SMS.",
+        "The Telegram bot isn’t configured. Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID on the server. Until then, guests who choose Telegram are told the bot isn’t connected yet.",
     },
     alerts: {
       title: "Alerts on this device",
@@ -334,7 +336,9 @@ const uz: UI = {
     sentHint: (table: string) => `Rahmat! Buyurtmangizni ${table}-stolga olib kelamiz.`,
     savedTitle: "Buyurtma saqlandi — iltimos, yuboring",
     savedHint: (phone: string) => `Oshxonaga avtomatik SMS yuborib boʻlmadi. Buyurtmani ${phone} raqamiga SMS qilib yuboring yoki ushbu ekranni ofitsiantga koʻrsating.`,
-    savedHintTelegram: (phone: string) => `Buyurtmani Telegram bot orqali yuborib boʻlmadi. Uni ${phone} raqamiga SMS qilib yuboring yoki ushbu ekranni ofitsiantga koʻrsating.`,
+    savedHintTelegram: "Buyurtmani Telegram bot orqali yuborib boʻlmadi. Qaytadan urinib koʻring yoki ushbu ekranni ofitsiantga koʻrsating.",
+    telegramOff: "Telegram bot hozircha ulanmagan. Ushbu ekranni ofitsiantga koʻrsating yoki buyurtmani bekor qilib, SMS orqali yuboring.",
+    retryTelegram: "Qayta yuborish",
     channelTitle: "Buyurtmani qanday yuboramiz?",
     viaSms: "SMS",
     viaTelegram: "Telegram Bot",
@@ -482,7 +486,7 @@ const uz: UI = {
       tgNotConfigured: "Telegram yoʻq",
       tgOn: "Telegram bot: buyurtmalar restoran chatiga yuboriladi",
       tgMissing:
-        "Telegram bot sozlanmagan. Serverda TELEGRAM_BOT_TOKEN va TELEGRAM_CHAT_ID ni oʻrnating. Shu paytgacha Telegram’ni tanlagan mehmonlardan buyurtmani SMS qilib yuborish soʻraladi.",
+        "Telegram bot sozlanmagan. Serverda TELEGRAM_BOT_TOKEN va TELEGRAM_CHAT_ID ni oʻrnating. Shu paytgacha Telegram’ni tanlagan mehmonlarga bot hali ulanmaganligi aytiladi.",
     },
     alerts: {
       title: "Shu qurilmadagi bildirishnomalar",
@@ -585,7 +589,9 @@ const ko: UI = {
     sentHint: (table: string) => `감사합니다! ${table}번 테이블로 가져다드릴게요.`,
     savedTitle: "주문이 저장됐어요 — 전송해 주세요",
     savedHint: (phone: string) => `주방에 자동으로 문자를 보내지 못했어요. 이 주문을 ${phone}(으)로 문자로 보내 주시거나 이 화면을 직원에게 보여 주세요.`,
-    savedHintTelegram: (phone: string) => `텔레그램 봇으로 주문을 보내지 못했어요. ${phone}(으)로 문자로 보내 주시거나 이 화면을 직원에게 보여 주세요.`,
+    savedHintTelegram: "텔레그램 봇으로 주문을 보내지 못했어요. 다시 시도하시거나 이 화면을 직원에게 보여 주세요.",
+    telegramOff: "텔레그램 봇이 아직 연결되지 않았어요. 이 화면을 직원에게 보여 주시거나, 주문을 취소하고 문자로 보내 주세요.",
+    retryTelegram: "다시 보내기",
     channelTitle: "주문 보내는 방법",
     viaSms: "문자 (SMS)",
     viaTelegram: "텔레그램 봇",
@@ -732,7 +738,7 @@ const ko: UI = {
       tgNotConfigured: "텔레그램 없음",
       tgOn: "텔레그램 봇: 주문이 레스토랑 채팅으로 전송됩니다",
       tgMissing:
-        "텔레그램 봇이 설정되지 않았습니다. 서버에 TELEGRAM_BOT_TOKEN과 TELEGRAM_CHAT_ID를 설정하세요. 그전까지 텔레그램을 선택한 손님에게는 문자로 보내 달라고 안내합니다.",
+        "텔레그램 봇이 설정되지 않았습니다. 서버에 TELEGRAM_BOT_TOKEN과 TELEGRAM_CHAT_ID를 설정하세요. 그전까지 텔레그램을 선택한 손님에게는 봇이 아직 연결되지 않았다고 안내합니다.",
     },
     alerts: {
       title: "이 기기 알림",
@@ -836,7 +842,9 @@ const ru: UI = {
     sentHint: (table: string) => `Спасибо! Мы принесём заказ к столу ${table}.`,
     savedTitle: "Заказ сохранён — отправьте его",
     savedHint: (phone: string) => `Не удалось автоматически отправить SMS на кухню. Отправьте этот заказ SMS на номер ${phone} или покажите экран официанту.`,
-    savedHintTelegram: (phone: string) => `Не удалось отправить заказ через Telegram-бот. Отправьте его SMS на номер ${phone} или покажите экран официанту.`,
+    savedHintTelegram: "Не удалось отправить заказ через Telegram-бот. Попробуйте ещё раз или покажите этот экран официанту.",
+    telegramOff: "Telegram-бот пока не подключён. Покажите этот экран официанту или отмените заказ и отправьте его по SMS.",
+    retryTelegram: "Отправить ещё раз",
     channelTitle: "Как отправить заказ?",
     viaSms: "SMS",
     viaTelegram: "Telegram-бот",
@@ -984,7 +992,7 @@ const ru: UI = {
       tgNotConfigured: "Без Telegram",
       tgOn: "Telegram-бот: заказы приходят в чат ресторана",
       tgMissing:
-        "Telegram-бот не настроен. Укажите на сервере TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID. До этого гостей, выбравших Telegram, просят отправить заказ по SMS.",
+        "Telegram-бот не настроен. Укажите на сервере TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID. До этого гостям, выбравшим Telegram, сообщается, что бот ещё не подключён.",
     },
     alerts: {
       title: "Уведомления на этом устройстве",

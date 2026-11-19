@@ -775,6 +775,15 @@
   background: #fdecec;
 }
 
+/* Why sending failed (e.g. "Telegram 400: Bad Request: chat not found"). */
+.orderError {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #9b1c1c;
+  overflow-wrap: anywhere;
+}
+
 .smsChip[data-status="cancelled"] {
   color: var(--ink-2);
   background: var(--line);

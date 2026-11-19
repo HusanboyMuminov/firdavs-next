@@ -148,13 +148,20 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
     setPhase("table");
   };
 
-  const submit = async (e: FormEvent<HTMLFormElement>) => {
+  const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (sending.current) return;
     if (!TABLE_RE.test(tableNo)) {
       setError(t.cart.tableInvalid);
       return;
     }
+    void placeOrder();
+  };
+
+  // One request id per order: pressing Confirm twice, or "Send again" after a failed
+  // Telegram attempt, never creates a second order or sends a second message.
+  const placeOrder = async () => {
+    if (sending.current) return;
     sending.current = true;
     setBusy(true);
     setError(null);
@@ -288,9 +295,11 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
                 </div>
                 <p className={styles.resultTitle}>{t.cart.savedTitle}</p>
                 <p className={styles.sentHint}>
-                  {result.channel === "telegram"
-                    ? t.cart.savedHintTelegram(restaurant.phoneDisplay)
-                    : t.cart.savedHint(restaurant.phoneDisplay)}
+                  {result.channel !== "telegram"
+                    ? t.cart.savedHint(restaurant.phoneDisplay)
+                    : result.sms === "not_configured"
+                      ? t.cart.telegramOff
+                      : t.cart.savedHintTelegram}
                 </p>
               </>
             )}
@@ -311,15 +320,31 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
             <div className={styles.footer}>
               {result.sms !== "sent" && (
                 <div className={styles.actions}>
-                  <a href={smsLink(result.text)} className={styles.primary}>
-                    <MessageIcon size={19} />
-                    {t.cart.sendSms}
-                  </a>
+                  {result.channel !== "telegram" ? (
+                    <a href={smsLink(result.text)} className={styles.primary}>
+                      <MessageIcon size={19} />
+                      {t.cart.sendSms}
+                    </a>
+                  ) : (
+                    // Telegram only: try the bot again (same order — never a second message).
+                    result.sms !== "not_configured" && (
+                      <button
+                        type="button"
+                        className={styles.primary}
+                        onClick={() => void placeOrder()}
+                        disabled={busy || cancelling}
+                        aria-busy={busy || undefined}
+                      >
+                        <TelegramIcon size={19} />
+                        {busy ? t.cart.sending : t.cart.retryTelegram}
+                      </button>
+                    )
+                  )}
                   <button
                     type="button"
                     className={styles.cancel}
                     onClick={cancelOrder}
-                    disabled={cancelling}
+                    disabled={cancelling || busy}
                     aria-busy={cancelling || undefined}
                   >
                     {cancelling ? t.cart.cancelling : t.cart.cancelOrder}
@@ -330,7 +355,7 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
                 type="button"
                 className={result.sms === "sent" ? styles.primary : styles.ghost}
                 onClick={finish}
-                disabled={cancelling}
+                disabled={cancelling || busy}
               >
                 <CheckIcon size={18} />
                 {t.cart.done}

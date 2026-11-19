@@ -591,6 +591,7 @@ type AdminOrder = {
   createdAt: number;
   channel: "sms" | "telegram";
   smsStatus: "sent" | "failed" | "not_configured" | "pending" | "cancelled";
+  error: string | null;
 };
 type OrdersData = {
   orders: AdminOrder[];
@@ -668,6 +669,7 @@ function OrdersPanel({ t, lang, live, now }: { t: UI; lang: Locale; live: boolea
                   {status(o)}
                 </span>
               </div>
+              {o.smsStatus === "failed" && o.error && <p className={styles.orderError}>{o.error}</p>}
               <ul className={styles.orderLines}>
                 {o.lines.map((l) => (
                   <li key={l.id}>

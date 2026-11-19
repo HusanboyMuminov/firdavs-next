@@ -26,6 +26,8 @@ export type Order = {
   createdAt: number;
   channel: OrderChannel;
   smsStatus: SmsStatus | "pending" | "cancelled";
+  /** Why the last send failed (admin only, e.g. "Telegram 400: Bad Request: chat not found"). */
+  error: string | null;
 };
 
 export const MAX_LINES = 50;
@@ -66,6 +68,7 @@ type Row = {
   created_at: number;
   channel: OrderChannel;
   sms_status: Order["smsStatus"];
+  sms_error: string | null;
 };
 
 const toOrder = (r: Row): Order => ({
@@ -78,9 +81,10 @@ const toOrder = (r: Row): Order => ({
   createdAt: r.created_at,
   channel: r.channel,
   smsStatus: r.sms_status,
+  error: r.sms_error,
 });
 
-const SELECT = "SELECT id, table_no, lines, total, unpriced, lang, created_at, channel, sms_status FROM orders";
+const SELECT = "SELECT id, table_no, lines, total, unpriced, lang, created_at, channel, sms_status, sms_error FROM orders";
 
 export function orderExists(requestId: string): boolean {
   return Boolean(getDb().prepare("SELECT 1 FROM orders WHERE request_id = ?").get(requestId));
@@ -165,7 +169,7 @@ export async function deliverOrder(order: Order): Promise<SmsStatus> {
     return "sent";
   } catch (error) {
     console.error(`[orders] ${telegram ? "Telegram" : "SMS"} for order #${order.id} failed:`, error);
-    setSmsStatus(order.id, "failed", String(error).slice(0, 300));
+    setSmsStatus(order.id, "failed", (error instanceof Error ? error.message : String(error)).slice(0, 300));
     return "failed";
   }
 }
